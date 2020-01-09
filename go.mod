@@ -1,4 +1,4 @@
-module kubeocean
+module github.com/pixiake/kubeocean
 
 go 1.13
 
