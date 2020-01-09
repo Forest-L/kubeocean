@@ -37,8 +37,8 @@ func startService(service string, version string, repo string) {
 		fmt.Println("Please provide the service name !")
 	} else if service == "kubelet" {
 		kubeletContainertest := kubeletContainer{repo, version}
-		generateFile("/usr/local/bin/kubelet", 0755, tmpl.getTmpl(kubelet), kubeletContainertest)
-		generateFile("/etc/systemd/system/kubelet.service", 0644, tmpl.getTmpl(kubeletService), kubeletContainertest)
+		generateFile("/usr/local/bin/kubelet", 0755, tmpl.GetTmpl("kubelet"), kubeletContainertest)
+		generateFile("/etc/systemd/system/kubelet.service", 0644, tmpl.GetTmpl("kubeletService"), kubeletContainertest)
 		//kubelet.TryStartKubelet()
 
 		fmt.Println(kubeletContainertest.KubeRepo)
