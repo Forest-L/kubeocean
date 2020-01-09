@@ -15,7 +15,7 @@ Wants=docker.socket
 
 [Service]
 User=root
-EnvironmentFile=/etc/kubernetes/kubelet.env
+EnvironmentFile=/var/lib/kubelet/kubeadm-flags.env
 ExecStart=/usr/local/bin/kubelet \
 		$KUBE_LOGTOSTDERR \
 		$KUBE_LOG_LEVEL \

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/pixiake/kubeocean/bootstrap"
 	"github.com/pixiake/kubeocean/tmpl"
 	"github.com/spf13/cobra"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/kubelet"
@@ -19,6 +20,7 @@ func main() {
 	//generateFile("/root/kubelet", 0755, kubeletContainerTempl, kubeletContainertest)
 	//generateFile("kubelet.service", 0755, kubeletServiceTempl, kubeletContainertest)
 	//checkPort("10250")
+	bootstrap.SystemInit()
 	commandCreate()
 }
 
