@@ -1,4 +1,4 @@
-module test
+module kubeocean
 
 go 1.13
 

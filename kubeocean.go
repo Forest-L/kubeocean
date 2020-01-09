@@ -6,7 +6,7 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/kubelet"
 	"os"
 	"text/template"
-	"github.com/pixiake/kubeocean/tmpl/tmpl"
+	"github.com/pixiake/kubeocean/tmpl"
 )
 
 
