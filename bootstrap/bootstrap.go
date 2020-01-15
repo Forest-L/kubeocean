@@ -11,5 +11,9 @@ func SystemInit() error {
 		return fmt.Errorf("failed to sysctl: %v", err)
 	}
 
+	if err := exec.Command("swapoff", "-a").Run(); err != nil {
+		return fmt.Errorf("failed to swapoff: %v", err)
+	}
+
 	return nil
 }

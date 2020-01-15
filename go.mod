@@ -3,8 +3,10 @@ module github.com/pixiake/kubeocean
 go 1.13
 
 require (
+	github.com/go-bindata/go-bindata v3.1.2+incompatible // indirect
 	github.com/lithammer/dedent v1.1.0
 	github.com/spf13/cobra v0.0.5
+	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586
 	k8s.io/kubernetes v1.17.0
 )
 

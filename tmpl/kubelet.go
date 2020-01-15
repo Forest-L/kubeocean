@@ -15,8 +15,15 @@ Wants=docker.socket
 
 [Service]
 User=root
+Environment="KUBELET_KUBECONFIG_ARGS=--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf"
+Environment="KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml"
+EnvironmentFile=-/etc/default/kubelet
 EnvironmentFile=/var/lib/kubelet/kubeadm-flags.env
-ExecStart=/usr/local/bin/kubelet \
+ExecStart=/usr/bin/docker run $KUBELET_CONTAINER \
+        $KUBELET_KUBECONFIG_ARGS \
+        $KUBELET_CONFIG_ARGS  \
+        $KUBELET_KUBEADM_ARGS  \
+        $KUBELET_EXTRA_ARGS  \
 		$KUBE_LOGTOSTDERR \
 		$KUBE_LOG_LEVEL \
 		$KUBELET_API_SERVER \
@@ -41,9 +48,8 @@ WantedBy=multi-user.target
     `)))
 
 	kubeletContainerTempl = template.Must(template.New("kubeletContainer").Parse(
-		dedent.Dedent(`#!/bin/bash
-/usr/bin/docker run \
-  --net=host \
+		dedent.Dedent(`[Service]
+Environment="KUBELET_CONTAINER= --net=host \
   --pid=host \
   --privileged \
   --name=kubelet \
@@ -64,10 +70,15 @@ WantedBy=multi-user.target
   -v /var/lib/calico:/var/lib/calico:shared \
   -v /var/lib/cni:/var/lib/cni:shared \
   -v /var/run:/var/run:rw \
-  -v /etc/kubernetes:/etc/kubernetes:ro \
+  -v /etc/kubernetes:/etc/kubernetes:shared \
+  -v /usr/libexec/kubernetes:/usr/libexec/kubernetes:shared \
   -v /etc/os-release:/etc/os-release:ro \
-  {{.KubeRepo}}/hyperkube:{{.KubeVersion}} \
-  ./hyperkube kubelet \
-  "$@"
+  {{.KubeRepo}}/google-containers/hyperkube:v1.17.0 \
+  kubelet "
+    `)))
+
+	kubeletTempl = template.Must(template.New("kubeletContainer").Parse(
+		dedent.Dedent(`#!/bin/bash
+/usr/bin/docker run --rm {{.KubeRepo}}/google-containers/hyperkube:{{.KubeVersion}} kubelet "$@"
     `)))
 )
