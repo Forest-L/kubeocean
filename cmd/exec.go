@@ -13,14 +13,14 @@ func NewCmdExec() *cobra.Command {
 	var execCmd = &cobra.Command{
 		Use:   "exec",
 		Short: "Batch SSH commands",
-		Long:  "A simple parallel SSH tool that allows you to execute command combinations to hosts by SSH.",
+		Long:  "A simple parallel SSH tool that allows you to execute command combinations to cluster by SSH.",
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println(strings.Join(args, ","))
 			ssh.ExecuteCmd(exec)
 		},
 	}
 
-	execCmd.Flags().StringVarP(&exec.Hosts, "hosts", "", "", "host address list")
+	execCmd.Flags().StringVarP(&exec.Hosts, "cluster", "", "", "host address list")
 	execCmd.Flags().StringVarP(&exec.Ips, "ips", "", "", "ip address list")
 	execCmd.Flags().StringVarP(&exec.Cmds, "cmds", "m", "", "cmds")
 	execCmd.Flags().StringVarP(&exec.Username, "username", "u", "root", "username")
