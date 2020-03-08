@@ -1,6 +1,20 @@
 package cluster
 
-type nodeCfg struct {
+const (
+	DefaultSSHPort        = "22"
+	DefaultDockerSockPath = "/var/run/docker.sock"
+
+	ETCDRole   = "etcd"
+	MasterRole = "master"
+	WorkerRole = "worker"
+)
+
+type ClusterCfg struct {
+	Nodes          []NodeCfg `yaml:"nodes" json:"nodes,omitempty"`
+	SSHKeyPath     string    `yaml:"ssh_key_path" json:"sshKeyPath,omitempty" norman:"nocreate,noupdate"`
+	DefaultSSHPort int
+}
+type NodeCfg struct {
 	HostName         string            `yaml:"hostName,omitempty" json:"hostName,omitempty" norman:"type=reference[node]"`
 	Address          string            `yaml:"address" json:"address,omitempty"`
 	Port             string            `yaml:"port" json:"port,omitempty"`
