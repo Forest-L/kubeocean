@@ -3,11 +3,16 @@ module github.com/pixiake/kubeocean
 go 1.13
 
 require (
-	github.com/go-bindata/go-bindata v3.1.2+incompatible // indirect
 	github.com/lithammer/dedent v1.1.0
+	github.com/mitchellh/go-homedir v1.1.0
+	github.com/pkg/sftp v1.11.0
+	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
+	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586
-	k8s.io/kubernetes v1.17.0
+	gopkg.in/yaml.v2 v2.2.4
+	k8s.io/component-base v0.17.0
+	k8s.io/klog v1.0.0
 )
 
 replace k8s.io/api => k8s.io/api v0.17.0

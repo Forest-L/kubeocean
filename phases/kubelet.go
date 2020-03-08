@@ -1,8 +1,9 @@
-package kubelet
+package phases
 
 import (
 	"fmt"
 	"github.com/pixiake/kubeocean/tmpl"
+	"github.com/pixiake/kubeocean/util"
 	"github.com/spf13/cobra"
 	"os"
 	"text/template"
@@ -13,24 +14,10 @@ type kubeletContainer struct {
 	KubeVersion string
 }
 
-func isExist(path string) bool {
-	_, err := os.Stat(path)
-	if err != nil {
-		if os.IsExist(err) {
-			return true
-		}
-		if os.IsNotExist(err) {
-			return false
-		}
-		fmt.Println(err)
-		return false
-	}
-	return true
-}
 func createDirectory(directory []string) {
 	dirs := directory
 	for _, v := range dirs {
-		if isExist(v) {
+		if util.IsExist(v) {
 			fmt.Printf("%s is exist!", v)
 		} else {
 			err := os.MkdirAll(v, os.ModePerm)

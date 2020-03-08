@@ -14,5 +14,6 @@ func NewKubeoceanCommand() *cobra.Command {
 
 	rootCmd.AddCommand(NewCmdExec())
 	rootCmd.AddCommand(NewCmdVersion())
+	rootCmd.AddCommand(NewCmdInit())
 	return rootCmd
 }

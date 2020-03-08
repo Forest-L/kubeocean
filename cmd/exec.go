@@ -11,9 +11,10 @@ func NewCmdExec() *cobra.Command {
 
 	exec := ssh.ExecInfo{}
 	var execCmd = &cobra.Command{
-		Use:   "exec",
+		Use:   "exec [flags]",
 		Short: "Batch SSH commands",
 		Long:  "A simple parallel SSH tool that allows you to execute command combinations to hosts by SSH.",
+
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println(strings.Join(args, ","))
 			ssh.ExecuteCmd(exec)
