@@ -19,7 +19,6 @@ func NewCmdCreateCfg() *cobra.Command {
 		Use:   "config",
 		Short: "Create cluster info",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("test")
 			clusterConfig()
 		},
 	}
@@ -51,12 +50,12 @@ func writeConfig(cluster *cluster.ClusterCfg, configFile string, print bool) err
 	if err != nil {
 		return err
 	}
-	log.Debugf("Deploying cluster configuration file: %s", configFile)
+	log.Infof("Deploying cluster info file: %s", configFile)
 
 	configString := fmt.Sprintf("%s", string(yamlConfig))
 	if print {
-		fmt.Printf("Configuration File: \n%s", configString)
-		return nil
+		fmt.Printf("%s", configString)
+		//return nil
 	}
 	return ioutil.WriteFile(configFile, []byte(configString), 0640)
 }
@@ -75,71 +74,101 @@ func clusterConfig() error {
 		return err
 	}
 
-	sshKeyPath, err := getConfig(reader, "Cluster Level SSH Private Key Path", "~/.ssh/id_rsa")
-	if err != nil {
-		return err
-	}
-	clusterCfg.SSHKeyPath = sshKeyPath
+	//sshKeyPath, err := getConfig(reader, "Cluster Level SSH Private Key Path", "~/.ssh/id_rsa")
+	//if err != nil {
+	//	return err
+	//}
+	//clusterCfg.SSHKeyPath = sshKeyPath
 	// Get Hosts config
-	clusterCfg.Nodes = make([]cluster.NodeCfg, 0)
+	masterNumber := 0
+	clusterCfg.Hosts = make([]cluster.NodeCfg, 0)
 	for i := 0; i < numberOfHostsInt; i++ {
-		hostCfg, err := getHostConfig(reader, i, clusterCfg.SSHKeyPath)
+		hostCfg, isMaster, err := getHostConfig(reader, i)
 		if err != nil {
 			return err
 		}
-		clusterCfg.Nodes = append(clusterCfg.Nodes, *hostCfg)
+		clusterCfg.Hosts = append(clusterCfg.Hosts, *hostCfg)
+		if isMaster == true {
+			masterNumber = masterNumber + 1
+		}
 	}
+	if masterNumber > 1 {
+		address, err := getConfig(reader, fmt.Sprintf("Address of LoadBalancer for KubeApiserver"), "")
+		if err != nil {
+			return err
+		}
+		clusterCfg.LBKubeApiserverAddr = address
+
+		port, err := getConfig(reader, fmt.Sprintf("Port of LoadBalancer for KubeApiserver"), cluster.DefaultLBPort)
+		if err != nil {
+			return err
+		}
+		clusterCfg.LBKubeApiserverPort = port
+	}
+
+	// Get Network config
+	networkConfig, err := getNetworkConfig(reader)
+	if err != nil {
+		return err
+	}
+	clusterCfg.Network = *networkConfig
 
 	dir, _ := os.Executable()
 	exPath := filepath.Dir(dir)
-	println(exPath)
-	return writeConfig(&clusterCfg, exPath+"cluster-info.yaml", true)
+	configFile := fmt.Sprintf("%s/%s", exPath, "cluster-info.yaml")
+	return writeConfig(&clusterCfg, configFile, true)
 }
 
-func getHostConfig(reader *bufio.Reader, index int, clusterSSHKeyPath string) (*cluster.NodeCfg, error) {
+func getHostConfig(reader *bufio.Reader, index int) (*cluster.NodeCfg, bool, error) {
+	isMaster := false
 	host := cluster.NodeCfg{}
-
 	address, err := getConfig(reader, fmt.Sprintf("SSH Address of host (%d)", index+1), "")
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	host.Address = address
 
-	port, err := getConfig(reader, fmt.Sprintf("SSH Port of host (%d)", index+1), cluster.DefaultSSHPort)
+	port, err := getConfig(reader, fmt.Sprintf("SSH Port of host (%s)", address), cluster.DefaultSSHPort)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	host.Port = port
 
-	sshKeyPath, err := getConfig(reader, fmt.Sprintf("SSH Private Key Path of host (%s)", address), "")
-	if err != nil {
-		return nil, err
-	}
-	if len(sshKeyPath) == 0 {
-		fmt.Printf("[-] You have entered empty SSH key path, trying fetch from SSH key parameter\n")
-		sshKey, err := getConfig(reader, fmt.Sprintf("SSH Private Key of host (%s)", address), "")
-		if err != nil {
-			return nil, err
-		}
-		if len(sshKey) == 0 {
-			fmt.Printf("[-] You have entered empty SSH key, defaulting to cluster level SSH key: %s\n", clusterSSHKeyPath)
-			host.SSHKeyPath = clusterSSHKeyPath
-		} else {
-			host.SSHKey = sshKey
-		}
-	} else {
-		host.SSHKeyPath = sshKeyPath
-	}
+	//sshKeyPath, err := getConfig(reader, fmt.Sprintf("SSH Private Key Path of host (%s)", address), "")
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if len(sshKeyPath) == 0 {
+	//	fmt.Printf("[-] You have entered empty SSH key path, trying fetch from SSH key parameter\n")
+	//	sshKey, err := getConfig(reader, fmt.Sprintf("SSH Private Key of host (%s)", address), "")
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	if len(sshKey) == 0 {
+	//		fmt.Printf("[-] You have entered empty SSH key, defaulting to cluster level SSH key: %s\n", clusterSSHKeyPath)
+	//		host.SSHKeyPath = clusterSSHKeyPath
+	//	} else {
+	//		host.SSHKey = sshKey
+	//	}
+	//} else {
+	//	host.SSHKeyPath = sshKeyPath
+	//}
 
 	sshUser, err := getConfig(reader, fmt.Sprintf("SSH User of host (%s)", address), "root")
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	host.User = sshUser
 
+	password, err := getConfig(reader, fmt.Sprintf("SSH Password of host (%s)", address), "")
+	if err != nil {
+		return nil, false, err
+	}
+	host.Password = password
+
 	hostRole, err := getConfig(reader, fmt.Sprintf("What's host (%s) role?(0: etcd, 1: master, 2: worker)", address), "012")
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	if strings.Contains(hostRole, "0") {
@@ -147,6 +176,7 @@ func getHostConfig(reader *bufio.Reader, index int, clusterSSHKeyPath string) (*
 	}
 	if strings.Contains(hostRole, "1") {
 		host.Role = append(host.Role, cluster.MasterRole)
+		isMaster = true
 	}
 	if strings.Contains(hostRole, "2") {
 		host.Role = append(host.Role, cluster.WorkerRole)
@@ -154,15 +184,38 @@ func getHostConfig(reader *bufio.Reader, index int, clusterSSHKeyPath string) (*
 
 	hostnameOverride, err := getConfig(reader, fmt.Sprintf("Override Hostname of host (%s)", address), "")
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	host.HostnameOverride = hostnameOverride
 
 	internalAddress, err := getConfig(reader, fmt.Sprintf("Internal IP of host (%s)", address), "")
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	host.InternalAddress = internalAddress
 
-	return &host, nil
+	return &host, isMaster, nil
+}
+
+func getNetworkConfig(reader *bufio.Reader) (*cluster.NetworkConfig, error) {
+	networkConfig := cluster.NetworkConfig{}
+
+	networkPlugin, err := getConfig(reader, "Network Plugin Type (calico, flannel)", cluster.DefaultNetworkPlugin)
+	if err != nil {
+		return nil, err
+	}
+	networkConfig.Plugin = networkPlugin
+
+	podsCIDR, err := getConfig(reader, "Specify range of IP addresses for the pod network.", cluster.DefaultPodsCIDR)
+	if err != nil {
+		return nil, err
+	}
+	networkConfig.KubePodsCIDR = podsCIDR
+
+	serviceCIDR, err := getConfig(reader, "Use alternative range of IP address for service VIPs.", cluster.DefaultServiceCIDR)
+	if err != nil {
+		return nil, err
+	}
+	networkConfig.KubeServiceCIDR = serviceCIDR
+	return &networkConfig, nil
 }

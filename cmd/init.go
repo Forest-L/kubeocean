@@ -9,7 +9,7 @@ import (
 func NewCmdInit() *cobra.Command {
 	var configpath string
 	var initCmd = &cobra.Command{
-		Use:   "create",
+		Use:   "init",
 		Short: "Create a kubernetes cluster",
 		Args:  cobra.MaximumNArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
