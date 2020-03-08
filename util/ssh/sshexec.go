@@ -1,9 +1,8 @@
 package ssh
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
+	"sync"
 	"time"
 )
 
@@ -34,8 +33,9 @@ func ExecuteCmd(exec ExecInfo) {
 	var cipherList []string
 	var err error
 
-	sshHosts := []SSHHost{}
-	var hostInfo SSHHost
+	sshHosts := Cluster{}.Hosts
+	newSshHosts := Cluster{}.Hosts
+	var hostInfo Host
 
 	if exec.IpFile != "" {
 		hostList, err = GetIpListFromFile(exec.IpFile)
@@ -82,82 +82,104 @@ func ExecuteCmd(exec ExecInfo) {
 
 	if exec.CfgFile == "" {
 		for _, host := range hostList {
-			hostInfo.Host = host
-			hostInfo.Username = exec.Username
-			hostInfo.Password = exec.Password
+			hostInfo.Ip = host
+			hostInfo.User = exec.Username
+			hostInfo.Passwd = exec.Password
 			hostInfo.Port = exec.Port
 			hostInfo.CmdList = cmdList
 			hostInfo.Key = exec.Key
 			hostInfo.LinuxMode = exec.LinuxMode
-			sshHosts = append(sshHosts, hostInfo)
+			newSshHosts = append(newSshHosts, hostInfo)
 		}
 	} else {
-		sshHosts, err = GetJsonFile(exec.CfgFile)
+		log.Info("Get config info")
+		sshHosts, err = GetYamlFile(exec.CfgFile)
 		if err != nil {
 			log.Println("load cfgFile error: ", err)
 		}
-
-		for i := 0; i < len(sshHosts); i++ {
-			if sshHosts[i].Cmds != "" {
-				sshHosts[i].CmdList = SplitString(sshHosts[i].Cmds)
-			} else {
-				cmdList, err = Getfile(sshHosts[1].CmdFile)
-				if err != nil {
-					log.Println("load cmdFile error: ", err)
-					return
-				}
-				sshHosts[i].CmdList = cmdList
-			}
+		for _, host := range sshHosts {
+			//log.Info(host)
+			hostInfo.Ip = host.Ip
+			hostInfo.User = host.User
+			hostInfo.Passwd = host.Passwd
+			hostInfo.Key = host.Key
+			hostInfo.Port = host.Port
+			hostInfo.Roles = host.Roles
+			hostInfo.CmdList = cmdList
+			hostInfo.LinuxMode = exec.LinuxMode
+			newSshHosts = append(newSshHosts, hostInfo)
 		}
+
+		//for i := 0; i < len(sshHosts); i++ {
+		//	if sshHosts[i].Cmds != "" {
+		//		sshHosts[i].CmdList = SplitString(sshHosts[i].Cmds)
+		//	} else {
+		//		cmdList, err = Getfile(sshHosts[1].CmdFile)
+		//		if err != nil {
+		//			log.Println("load cmdFile error: ", err)
+		//			return
+		//		}
+		//		sshHosts[i].CmdList = cmdList
+		//	}
+		//}
 	}
 
-	chLimit := make(chan bool, exec.NumLimit)
-	chs := make([]chan SSHResult, len(sshHosts))
+	//chLimit := make(chan bool, exec.NumLimit)
+	//chs := make([]chan SSHResult, len(sshHosts))
 	startTime := time.Now()
 	log.Println("Welcome to KubeOcean")
-	limitFunc := func(chLimit chan bool, ch chan SSHResult, host SSHHost) {
-		Dossh(host.Username, host.Password, host.Host, host.Key, host.CmdList, host.Port, exec.TimeLimit, cipherList, host.LinuxMode, ch)
-		<-chLimit
+	wg := sync.WaitGroup{}
+	//limitFunc := func(chLimit chan bool, host Host) {
+	//	wg.Add(1)
+	//	Dossh(host.Username, host.Passwd, host.Ip, host.Key, host.CmdList, host.Port, exec.TimeLimit, cipherList, host.LinuxMode)
+	//	log.Info(host.Roles)
+	//	<-chLimit
+	//	//log.Info(a)
+	//}
+	limitFunc := func(host Host) {
+		Dossh(host.User, host.Passwd, host.Ip, host.Key, host.CmdList, host.Port, exec.TimeLimit, cipherList, host.LinuxMode)
+		log.Info(host.Roles)
+		//a :=  <-chLimit
+		//log.Info(a)
+	}
+	for _, host := range newSshHosts {
+		//chLimit<- true
+		//go limitFunc(chLimit, host)
+		limitFunc(host)
 	}
 
-	for i, host := range sshHosts {
-		chs[i] = make(chan SSHResult, 1)
-		chLimit <- true
-		go limitFunc(chLimit, chs[i], host)
-	}
-
-	sshResults := []SSHResult{}
-	for _, ch := range chs {
-		res := <-ch
-		if res.Result != "" {
-			sshResults = append(sshResults, res)
-		}
-	}
-
+	//sshResults := []SSHResult{}
+	//for _, ch := range chs {
+	//	res := <-ch
+	//	if res.Result != "" {
+	//		sshResults = append(sshResults, res)
+	//	}
+	//}
+	wg.Wait()
 	endTime := time.Now()
 	log.Printf("KubeOcean finished. Process time %s. Number of active ip is %d", endTime.Sub(startTime), len(sshHosts))
 
-	if exec.OutTxt {
-		for _, sshResult := range sshResults {
-			err = WriteIntoTxt(sshResult, exec.FileLocate)
-			if err != nil {
-				log.Println("write into txt error: ", err)
-				return
-			}
-		}
-		return
-	}
-	if exec.JsonMode {
-		jsonResult, err := json.Marshal(sshResults)
-		if err != nil {
-			log.Println("json Marshal error: ", err)
-		}
-		fmt.Println(string(jsonResult))
-		return
-	}
-	for _, sshResults := range sshResults {
-		fmt.Println("host: ", sshResults.Host)
-		fmt.Println("========= Result =========")
-		fmt.Println(sshResults.Result)
-	}
+	//if exec.OutTxt {
+	//	for _, sshResult := range sshResults {
+	//		err = WriteIntoTxt(sshResult, exec.FileLocate)
+	//		if err != nil {
+	//			log.Println("write into txt error: ", err)
+	//			return
+	//		}
+	//	}
+	//	return
+	//}
+	//if exec.JsonMode {
+	//	jsonResult, err := json.Marshal(sshResults)
+	//	if err != nil {
+	//		log.Println("json Marshal error: ", err)
+	//	}
+	//	fmt.Println(string(jsonResult))
+	//	return
+	//}
+	//for _, sshResults := range sshResults {
+	//	fmt.Println("host: ", sshResults.Host)
+	//	fmt.Println("========= Result =========")
+	//	fmt.Println(sshResults.Result)
+	//}
 }

@@ -4,29 +4,32 @@ import (
 	"bufio"
 	"encoding/binary"
 	"encoding/json"
+	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"strconv"
 	"strings"
 )
 
-type SSHHost struct {
-	Host      string
-	Port      int
-	Username  string
-	Password  string
-	CmdFile   string
-	Cmds      string
-	CmdList   []string
-	Key       string
-	LinuxMode bool
-	Result    SSHResult
+type Host struct {
+	Name      string    `yaml:"name"`
+	Ip        string    `yaml:"ip"`
+	Port      int       `yaml:"port"`
+	User      string    `yaml:"user"`
+	Passwd    string    `yaml:"passwd"`
+	CmdFile   string    `yaml:"cmdfile"`
+	Cmds      string    `yaml:"cmds"`
+	CmdList   []string  `yaml:"cmdlist"`
+	Key       string    `yaml:"key"`
+	LinuxMode bool      `yaml:"linuxmode"`
+	Result    SSHResult `yaml:"result"`
+	Roles     []string  `yaml:"roles"`
 }
 
-type HostJson struct {
-	SshHosts []SSHHost
+type Cluster struct {
+	Hosts []Host `yaml:"hosts"`
 }
 
 type SSHResult struct {
@@ -71,21 +74,39 @@ func Getfile(filePath string) ([]string, error) {
 	return result, nil
 }
 
-func GetJsonFile(filePath string) ([]SSHHost, error) {
-	result := []SSHHost{}
+func GetYamlFile(filePath string) ([]Host, error) {
+	result := Cluster{}
+	b, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		//log.Println("read file ", filePath, err)
+		log.Fatal(err)
+		return result.Hosts, err
+	}
+	//var m HostJson
+	err = yaml.Unmarshal(b, &result)
+	if err != nil {
+		//log.Println("read file ", filePath, err)
+		log.Fatal(err)
+		return result.Hosts, err
+	}
+	log.Info(result.Hosts)
+	return result.Hosts, nil
+}
+
+func GetJsonFile(filePath string) ([]Host, error) {
+	result := Cluster{}
 	b, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		log.Println("read file ", filePath, err)
-		return result, err
+		return result.Hosts, err
 	}
-	var m HostJson
-	err = json.Unmarshal(b, &m)
+	err = json.Unmarshal(b, &result)
 	if err != nil {
 		log.Println("read file ", filePath, err)
-		return result, err
+		return result.Hosts, err
 	}
-	result = m.SshHosts
-	return result, nil
+	//result = m.SshHosts
+	return result.Hosts, nil
 }
 
 func WriteIntoTxt(sshResult SSHResult, locate string) error {

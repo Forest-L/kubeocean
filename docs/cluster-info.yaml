@@ -1,0 +1,27 @@
+hosts:
+  - name: master1
+    ip: 192.168.0.2
+    port: 22
+    passwd: 123456
+    role:
+      - master
+      - node
+      - etcd
+  - name: master2
+    ip: 192.168.0.2
+    port: 22
+    user: ubuntu
+    passwd: 123456
+    role:
+      - master
+      - node
+      - etcd
+  - name: master3
+    ip: 192.168.0.2
+    port: 22
+    user: ubuntu
+    passwd: 123456
+    role:
+      - master
+      - node
+      - etcd
