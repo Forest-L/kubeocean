@@ -5,8 +5,6 @@ import (
 	"github.com/pixiake/kubeocean/util/cluster"
 	"github.com/spf13/cobra"
 	"log"
-	"os"
-	"path/filepath"
 )
 
 func NewCmdCreateCluster() *cobra.Command {
@@ -29,14 +27,14 @@ func NewCmdCreateCluster() *cobra.Command {
 
 func createCluster(clusterCfgFile string, kubeadmCfgFile string) {
 	if clusterCfgFile != "" {
-		dir, _ := os.Executable()
-		exPath := filepath.Dir(dir)
-		configFile := fmt.Sprintf("%s/%s", exPath, "cluster-info.yaml")
-		clusterInfo, err := cluster.ResolveClusterInfoFile(configFile)
+		//dir, _ := os.Executable()
+		//exPath := filepath.Dir(dir)
+		//configFile := fmt.Sprintf("%s/%s", exPath, "cluster-info.yaml")
+		clusterInfo, err := cluster.ResolveClusterInfoFile(clusterCfgFile)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("%v", clusterInfo)
+		fmt.Println(clusterInfo)
 	} else {
 		fmt.Printf("Init a allinone cluster")
 	}

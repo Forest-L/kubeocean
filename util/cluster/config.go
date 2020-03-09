@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -39,6 +38,5 @@ func GetYamlFile(filePath string) (*ClusterCfg, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Info(ClusterCfg{})
 	return &result, nil
 }

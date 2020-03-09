@@ -111,6 +111,8 @@ func clusterConfig() error {
 			return err
 		}
 		lbCfg.Domain = domain
+
+		clusterCfg.LBKubeApiserver = lbCfg
 	}
 
 	// Get Network config
