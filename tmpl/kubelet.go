@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	kubeletServiceTempl = template.Must(template.New("kubeletService").Parse(
+	KubeletServiceTempl = template.Must(template.New("kubeletService").Parse(
 		dedent.Dedent(`[Unit]
 Description=Kubernetes Kubelet Server
 Documentation=https://github.com/GoogleCloudPlatform/kubernetes
@@ -47,7 +47,7 @@ ExecReload=/usr/bin/docker restart kubelet
 WantedBy=multi-user.target
     `)))
 
-	kubeletContainerTempl = template.Must(template.New("kubeletContainer").Parse(
+	KubeletContainerTempl = template.Must(template.New("kubeletContainer").Parse(
 		dedent.Dedent(`[Service]
 Environment="KUBELET_CONTAINER= --net=host \
   --pid=host \
@@ -73,12 +73,12 @@ Environment="KUBELET_CONTAINER= --net=host \
   -v /etc/kubernetes:/etc/kubernetes:shared \
   -v /usr/libexec/kubernetes:/usr/libexec/kubernetes:shared \
   -v /etc/os-release:/etc/os-release:ro \
-  {{.KubeRepo}}/google-containers/hyperkube:v1.17.0 \
+  {{ .Repo }}/google-containers/hyperkube:{{ .Version }} \
   kubelet "
     `)))
 
-	kubeletTempl = template.Must(template.New("kubeletContainer").Parse(
+	KubeletTempl = template.Must(template.New("kubeletContainer").Parse(
 		dedent.Dedent(`#!/bin/bash
-/usr/bin/docker run --rm {{.KubeRepo}}/google-containers/hyperkube:{{.KubeVersion}} kubelet "$@"
+/usr/bin/docker run --rm {{ .Repo }}/google-containers/hyperkube:{{ .Version }} kubelet "$@"
     `)))
 )

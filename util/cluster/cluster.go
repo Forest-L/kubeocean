@@ -23,6 +23,19 @@ type ClusterCfg struct {
 	KubeImageRepo   string             `yaml:"kube_image_repo" json:"kube_image_repo,omitempty"`
 	Network         NetworkConfig      `yaml:"network" json:"network,omitempty"`
 }
+
+type EtcdNodes struct {
+	Hosts []NodeCfg
+}
+
+type MasterNodes struct {
+	Hosts []NodeCfg
+}
+
+type WorkerNodes struct {
+	Hosts []NodeCfg
+}
+
 type NodeCfg struct {
 	HostName         string   `yaml:"hostName,omitempty" json:"hostName,omitempty" norman:"type=reference[node]"`
 	Address          string   `yaml:"address" json:"address,omitempty"`

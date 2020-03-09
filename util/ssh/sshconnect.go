@@ -1,7 +1,6 @@
 package ssh
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/pkg/sftp"
 	log "github.com/sirupsen/logrus"
@@ -48,15 +47,15 @@ func connect(user, password, host, key string, port int, cipherList []string) (*
 		auth = append(auth, ssh.PublicKeys(signer))
 	}
 
-	//if len(cipherList) == 0 {
-	//	config = ssh.Config{
-	//		Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "arcfour256", "arcfour128", "aes128-cbc", "3des-cbc", "aes192-cbc", "aes256-cbc"},
-	//	}
-	//} else {
-	//	config = ssh.Config{
-	//		Ciphers: cipherList,
-	//	}
-	//}
+	if len(cipherList) == 0 {
+		config = ssh.Config{
+			Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "arcfour256", "arcfour128", "aes128-cbc", "3des-cbc", "aes192-cbc", "aes256-cbc"},
+		}
+	} else {
+		config = ssh.Config{
+			Ciphers: cipherList,
+		}
+	}
 	config = ssh.Config{
 		Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "arcfour256", "arcfour128", "aes128-cbc", "3des-cbc", "aes192-cbc", "aes256-cbc"},
 	}
@@ -163,78 +162,7 @@ func SftpConnect(user, password, host, key string, port int, cipherList []string
 	return sftpClient, nil
 }
 
-func Dossh(username, password, host, key string, cmdlist []string, port, timeout int, cipherList []string, linuxMode bool) {
-	//chSSH := make(chan SSHResult)
-	//log.Info(linuxMode)
-	if linuxMode {
-		log.Info("ssh exec")
-		//go dossh_run(username, password, host, key, cmdlist, port, cipherList)
-		dossh_run(username, password, host, key, cmdlist, port, cipherList)
-	} else {
-		//go dossh_session(username, password, host, key, cmdlist, port, cipherList, chSSH)
-		log.Warn("no support session")
-	}
-	//var res SSHResult
-
-	//select {
-	//case <-time.After(time.Duration(timeout) * time.Second):
-	//	res.Host = host
-	//	res.Success = false
-	//	res.Result = ("SSH run timeout：" + strconv.Itoa(timeout) + " second.")
-	//	ch <- res
-	//case res = <-chSSH:
-	//	ch <- res
-	//}
-	//return
-}
-
-func dossh_session(username, password, host, key string, cmdlist []string, port int, cipherList []string, ch chan SSHResult) {
-	session, err := connect(username, password, host, key, port, cipherList)
-	var sshResult SSHResult
-	sshResult.Host = host
-
-	if err != nil {
-		sshResult.Success = false
-		sshResult.Result = fmt.Sprintf("<%s>", err.Error())
-		ch <- sshResult
-		return
-	}
-	defer session.Close()
-
-	cmdlist = append(cmdlist, "exit")
-
-	stdinBuf, _ := session.StdinPipe()
-
-	var outbt, errbt bytes.Buffer
-	session.Stdout = &outbt
-
-	session.Stderr = &errbt
-	err = session.Shell()
-	if err != nil {
-		sshResult.Success = false
-		sshResult.Result = fmt.Sprintf("<%s>", err.Error())
-		ch <- sshResult
-		return
-	}
-	for _, c := range cmdlist {
-		c = c + "\n"
-		stdinBuf.Write([]byte(c))
-	}
-	session.Wait()
-	if errbt.String() != "" {
-		sshResult.Success = false
-		sshResult.Result = errbt.String()
-		ch <- sshResult
-	} else {
-		sshResult.Success = true
-		sshResult.Result = outbt.String()
-		ch <- sshResult
-	}
-
-	return
-}
-
-func dossh_run(username, password, host, key string, cmdlist []string, port int, cipherList []string) {
+func DosshRun(username, password, host, key string, cmdlist []string, port int, cipherList []string) error {
 	session, err := connect(username, password, host, key, port, cipherList)
 	if err != nil {
 		log.Fatal("创建ssh session 失败", err)
@@ -250,20 +178,15 @@ func dossh_run(username, password, host, key string, cmdlist []string, port int,
 		newCmdList = append(newCmdList, cmd)
 	}
 
-	//newCmdList = append(newCmdList, "exit")
 	newcmd := strings.Join(newCmdList, "&&")
-	//fmt.Println(newcmd)
-	//var outbt, errbt bytes.Buffer
-	//session.Stdout = &outbt
-	//
-	//session.Stderr = &errbt
+
 	log.Info(newcmd)
 	b, err := session.CombinedOutput(newcmd)
 	if err != nil {
-		log.Fatal("任务执行失败：", err)
-		return
+		return err
 	}
-	fmt.Printf("执行结果：\n%s", string(b))
+	log.Printf("执行结果：\n%s", string(b))
+	return nil
 }
 
 func uploadFile(sftpClient *sftp.Client, localFilePath string, remotePath string) {

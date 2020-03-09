@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"github.com/pixiake/kubeocean/util/cluster"
 	"os"
 )
 
@@ -22,4 +23,10 @@ func IsExist(path string) bool {
 		return false
 	}
 	return true
+}
+
+func CmdExec(isLocal bool, cmd string, host cluster.NodeCfg) {
+	if isLocal {
+
+	}
 }
