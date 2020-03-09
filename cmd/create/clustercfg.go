@@ -93,17 +93,24 @@ func clusterConfig() error {
 		}
 	}
 	if masterNumber > 1 {
+		lbCfg := cluster.LBKubeApiserverCfg{}
 		address, err := getConfig(reader, fmt.Sprintf("Address of LoadBalancer for KubeApiserver"), "")
 		if err != nil {
 			return err
 		}
-		clusterCfg.LBKubeApiserverAddr = address
+		lbCfg.Address = address
 
 		port, err := getConfig(reader, fmt.Sprintf("Port of LoadBalancer for KubeApiserver"), cluster.DefaultLBPort)
 		if err != nil {
 			return err
 		}
-		clusterCfg.LBKubeApiserverPort = port
+		lbCfg.Port = port
+
+		domain, err := getConfig(reader, fmt.Sprintf("Address of LoadBalancer for KubeApiserver"), cluster.DefaultLBDomain)
+		if err != nil {
+			return err
+		}
+		lbCfg.Domain = domain
 	}
 
 	// Get Network config

@@ -4,6 +4,7 @@ const (
 	DefaultSSHPort        = "22"
 	DefaultDockerSockPath = "/var/run/docker.sock"
 	DefaultLBPort         = "6443"
+	DefaultLBDomain       = "lb.kubesphere.local"
 	DefaultNetworkPlugin  = "calico"
 	DefaultPodsCIDR       = "10.233.64.0/18"
 	DefaultServiceCIDR    = "10.233.0.0/18"
@@ -15,9 +16,8 @@ const (
 type ClusterCfg struct {
 	Hosts []NodeCfg `yaml:"hosts" json:"hosts,omitempty"`
 	//SSHKeyPath     string    `yaml:"ssh_key_path" json:"sshKeyPath,omitempty" norman:"nocreate,noupdate"`
-	LBKubeApiserverAddr string        `yaml:"lb_kubeapiserver_addr" json:"lb_kubeapiserver_addr,omitempty"`
-	LBKubeApiserverPort string        `yaml:"lb_kubeapiserver_port" json:"lb_kubeapiserver_port,omitempty"`
-	Network             NetworkConfig `yaml:"network" json:"network,omitempty"`
+	LBKubeApiserver LBKubeApiserverCfg `yaml:"lb_kubeapiserver" json:"lb_kubeapiserver,omitempty"`
+	Network         NetworkConfig      `yaml:"network" json:"network,omitempty"`
 }
 type NodeCfg struct {
 	HostName         string   `yaml:"hostName,omitempty" json:"hostName,omitempty" norman:"type=reference[node]"`
@@ -55,4 +55,10 @@ type NetworkConfig struct {
 	Plugin          string `yaml:"plugin" json:"plugin,omitempty"`
 	KubePodsCIDR    string `yaml:"kube_pods_cidr" json:"kube_pods_cidr,omitempty"`
 	KubeServiceCIDR string `yaml:"kube_service_cidr" json:"kube_service_cidr,omitempty"`
+}
+
+type LBKubeApiserverCfg struct {
+	Domain  string `yaml:"domain" json:"domain,omitempty"`
+	Address string `yaml:"address" json:"address,omitempty"`
+	Port    string `yaml:"port" json:"port,omitempty"`
 }

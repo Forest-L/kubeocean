@@ -8,6 +8,6 @@ func NewCmdCreate() *cobra.Command {
 		Short: "Kubeocean create config and cluster",
 	}
 	cmd.AddCommand(NewCmdCreateCfg())
-
+	cmd.AddCommand(NewCmdCreateCluster())
 	return cmd
 }
