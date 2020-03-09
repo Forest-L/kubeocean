@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pixiake/kubeocean/bootstrap"
 	//"github.com/pixiake/kubeocean/statics"
+	"github.com/pixiake/kubeocean/util/cluster"
 	"github.com/pixiake/kubeocean/util/ssh"
 	log "github.com/sirupsen/logrus"
 	"os/exec"
@@ -40,7 +41,7 @@ func CreateCluster(configpath string) error {
 	bootstrap.SwapOff()
 	bootstrap.SystemInit()
 	bootstrap.Modprobe()
-	CreateKubeletService("kubelet", "v1.17.0", "gcr.io")
+	CreateKubeletService("kubelet", cluster.DefaultKubeVersion, cluster.DefaultKubeImageRepo)
 
 	//err1 := static.RestoreAssets("/usr/bin", "kubeadm")
 	//if err1 != nil {

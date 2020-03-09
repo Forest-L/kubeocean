@@ -8,6 +8,8 @@ const (
 	DefaultNetworkPlugin  = "calico"
 	DefaultPodsCIDR       = "10.233.64.0/18"
 	DefaultServiceCIDR    = "10.233.0.0/18"
+	DefaultKubeVersion    = "v1.17.3"
+	DefaultKubeImageRepo  = "gcr.azk8s.cn"
 	ETCDRole              = "etcd"
 	MasterRole            = "master"
 	WorkerRole            = "worker"
@@ -17,6 +19,8 @@ type ClusterCfg struct {
 	Hosts []NodeCfg `yaml:"hosts" json:"hosts,omitempty"`
 	//SSHKeyPath     string    `yaml:"ssh_key_path" json:"sshKeyPath,omitempty" norman:"nocreate,noupdate"`
 	LBKubeApiserver LBKubeApiserverCfg `yaml:"lb_kubeapiserver" json:"lb_kubeapiserver,omitempty"`
+	KubeVersion     string             `yaml:"kube_version" json:"kube_version,omitempty"`
+	KubeImageRepo   string             `yaml:"kube_image_repo" json:"kube_image_repo,omitempty"`
 	Network         NetworkConfig      `yaml:"network" json:"network,omitempty"`
 }
 type NodeCfg struct {

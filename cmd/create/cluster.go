@@ -3,8 +3,8 @@ package create
 import (
 	"fmt"
 	"github.com/pixiake/kubeocean/util/cluster"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"log"
 )
 
 func NewCmdCreateCluster() *cobra.Command {
@@ -26,6 +26,7 @@ func NewCmdCreateCluster() *cobra.Command {
 }
 
 func createCluster(clusterCfgFile string, kubeadmCfgFile string) {
+
 	if clusterCfgFile != "" {
 		//dir, _ := os.Executable()
 		//exPath := filepath.Dir(dir)
@@ -35,8 +36,20 @@ func createCluster(clusterCfgFile string, kubeadmCfgFile string) {
 			log.Fatal(err)
 		}
 		fmt.Println(clusterInfo)
+		createMultiNodes(clusterInfo)
 	} else {
-		fmt.Printf("Init a allinone cluster")
+		log.Info("Init a allinone cluster")
+		createAllinone()
 	}
 
+}
+
+func createAllinone() {
+	fmt.Printf("test")
+}
+
+func createMultiNodes(cfg *cluster.ClusterCfg) {
+	for host, _ := range cfg.Hosts {
+		fmt.Printf("%v\n", host)
+	}
 }

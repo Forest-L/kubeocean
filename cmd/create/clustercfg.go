@@ -114,6 +114,19 @@ func clusterConfig() error {
 
 		clusterCfg.LBKubeApiserver = lbCfg
 	}
+	// Get Kubernetes version
+	version, err := getConfig(reader, fmt.Sprintf("Kubernetes Version"), cluster.DefaultKubeVersion)
+	if err != nil {
+		return err
+	}
+	clusterCfg.KubeVersion = version
+
+	// Get Kubernetes version
+	repo, err := getConfig(reader, fmt.Sprintf("Kubernetes Images Repo"), cluster.DefaultKubeImageRepo)
+	if err != nil {
+		return err
+	}
+	clusterCfg.KubeImageRepo = repo
 
 	// Get Network config
 	networkConfig, err := getNetworkConfig(reader)

@@ -44,10 +44,10 @@ func CreateKubeletService(service string, version string, repo string) {
 	} else if service == "kubelet" {
 		dir := []string{"/etc/systemd/system/kubelet.service.d"}
 		createDirectory(dir)
-		kubeletContainertest := kubeletContainer{repo, version}
-		generateFile("/usr/bin/kubelet", 0755, tmpl.GetTmpl("kubelet"), kubeletContainertest)
-		generateFile("/etc/systemd/system/kubelet.service.d/kubelet-contain.conf", 0644, tmpl.GetTmpl("kubeletContainer"), kubeletContainertest)
-		generateFile("/etc/systemd/system/kubelet.service", 0644, tmpl.GetTmpl("kubeletService"), kubeletContainertest)
+		kubeletContainer := kubeletContainer{repo, version}
+		generateFile("/usr/bin/kubelet", 0755, tmpl.GetTmpl("kubelet"), kubeletContainer)
+		generateFile("/etc/systemd/system/kubelet.service.d/kubelet-contain.conf", 0644, tmpl.GetTmpl("kubeletContainer"), kubeletContainer)
+		generateFile("/etc/systemd/system/kubelet.service", 0644, tmpl.GetTmpl("kubeletService"), kubeletContainer)
 
 	} else {
 		fmt.Println("nonsupport this service!")
