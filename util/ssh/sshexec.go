@@ -30,7 +30,7 @@ type ExecInfo struct {
 func ExecuteCmd(exec ExecInfo) {
 	var cmdList []string
 	var hostList []string
-	var cipherList []string
+	//var cipherList []string
 	var err error
 
 	sshHosts := Cluster{}.Hosts
@@ -76,9 +76,9 @@ func ExecuteCmd(exec ExecInfo) {
 		cmdList = SplitString(exec.Cmds)
 	}
 
-	if exec.Ciphers != "" {
-		cipherList = SplitString(exec.Ciphers)
-	}
+	//if exec.Ciphers != "" {
+	//	cipherList = SplitString(exec.Ciphers)
+	//}
 
 	if exec.CfgFile == "" {
 		for _, host := range hostList {
@@ -137,7 +137,7 @@ func ExecuteCmd(exec ExecInfo) {
 	//	//log.Info(a)
 	//}
 	limitFunc := func(host Host) {
-		Dossh(host.User, host.Passwd, host.Ip, host.Key, host.CmdList, host.Port, exec.TimeLimit, cipherList, host.LinuxMode)
+		//Dossh(host.User, host.Passwd, host.Ip, host.Key, host.CmdList, host.Port, exec.TimeLimit, cipherList, host.LinuxMode)
 		log.Info(host.Roles)
 		//a :=  <-chLimit
 		//log.Info(a)

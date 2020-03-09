@@ -6,6 +6,7 @@ import (
 	"github.com/pixiake/kubeocean/util/cluster"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"text/template"
 )
 
 type KubeContainer struct {
@@ -15,7 +16,8 @@ type KubeContainer struct {
 
 type File struct {
 	Name string
-	pem  os.FileMode
+	Pem  os.FileMode
+	Tmpl *template.Template
 }
 
 func GenerateBootStrapScript() {
@@ -26,7 +28,7 @@ func GenerateBootStrapScript() {
 			log.Errorf("%v", err)
 		}
 	}
-	bootStrapScript := fmt.Sprintf("%s/bootStrapScript.sh")
+	bootStrapScript := fmt.Sprintf("%s/bootStrapScript.sh", tmpPath)
 	file, err := os.OpenFile(bootStrapScript, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0755)
 	defer file.Close()
 	if err != nil {
@@ -36,21 +38,39 @@ func GenerateBootStrapScript() {
 
 }
 
+func createDirectory(directory []string) {
+	dirs := directory
+	for _, v := range dirs {
+		if util.IsExist(v) {
+			fmt.Printf("%s is exist!", v)
+		} else {
+			err := os.MkdirAll(v, os.ModePerm)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
+	}
+}
+
 func GenerateKubeletFiles(cfg cluster.ClusterCfg) {
 	kubeContainerInfo := KubeContainer{}
 	kubeContainerInfo.Repo = cfg.KubeImageRepo
 	kubeContainerInfo.Version = cfg.KubeVersion
 
-	kubelet := File{Name: "/usr/bin/kubelet", pem: 0755}
-	kubeletContainer := File{Name: "/etc/systemd/system/kubelet.service.d/kubelet-contain.conf", pem: 0644}
-	kubeletService := File{Name: "/etc/systemd/system/kubelet.service", pem: 0644}
+	dir := []string{"/etc/systemd/system/kubelet.service.d"}
+	createDirectory(dir)
+
+	kubelet := File{Name: "/usr/local/bin/kubelet", Pem: 0755, Tmpl: KubeletTempl}
+	kubeletContainer := File{Name: "/etc/systemd/system/kubelet.service.d/kubelet-contain.conf", Pem: 0644, Tmpl: KubeletContainerTempl}
+	kubeletService := File{Name: "/etc/systemd/system/kubelet.service", Pem: 0644, Tmpl: KubeletServiceTempl}
 	kubeletFiles := []File{kubelet, kubeletContainer, kubeletService}
 	for _, f := range kubeletFiles {
-		file, err := os.OpenFile(f.Name, os.O_CREATE|os.O_WRONLY|os.O_SYNC, f.pem)
+		file, err := os.OpenFile(f.Name, os.O_CREATE|os.O_WRONLY|os.O_SYNC, f.Pem)
 		defer file.Close()
 		if err != nil {
 			log.Errorf("%v", err)
 		}
-		BootStrapTmpl.Execute(file, kubeContainerInfo)
+		f.Tmpl.Execute(file, kubeContainerInfo)
 	}
 }
