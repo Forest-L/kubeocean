@@ -5,9 +5,8 @@ import (
 	"text/template"
 )
 
-var (
-	BootStrapTmpl = template.Must(template.New("kubeletService").Parse(
-		dedent.Dedent(`#!/bin/bash
+var BootStrapTmpl = template.Must(template.New("kubeletService").Parse(
+	dedent.Dedent(`#!/bin/bash
 
 swapoff -a
 sed -i /^[^#]*swap*/s/^/\#/g /etc/fstab
@@ -56,4 +55,3 @@ else
    echo 'nf_conntrack' > /etc/modules-load.d/kube_proxy-ipvs.conf
 fi
    `)))
-)

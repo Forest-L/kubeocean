@@ -25,17 +25,22 @@ type ClusterCfg struct {
 }
 
 type EtcdNodes struct {
-	Hosts []NodeCfg
+	Hosts []ClusterNodeCfg
 }
 
 type MasterNodes struct {
-	Hosts []NodeCfg
+	Hosts []ClusterNodeCfg
 }
 
 type WorkerNodes struct {
-	Hosts []NodeCfg
+	Hosts []ClusterNodeCfg
 }
-
+type ClusterNodeCfg struct {
+	Node     NodeCfg
+	IsEtcd   bool
+	IsMaster bool
+	IsWorker bool
+}
 type NodeCfg struct {
 	HostName         string   `yaml:"hostName,omitempty" json:"hostName,omitempty" norman:"type=reference[node]"`
 	Address          string   `yaml:"address" json:"address,omitempty"`
@@ -78,4 +83,40 @@ type LBKubeApiserverCfg struct {
 	Domain  string `yaml:"domain" json:"domain,omitempty"`
 	Address string `yaml:"address" json:"address,omitempty"`
 	Port    string `yaml:"port" json:"port,omitempty"`
+}
+
+type KubeadmCfg struct {
+	AdvertiseAddress string
+}
+
+func (cfg *ClusterCfg) GroupHosts() (*EtcdNodes, *MasterNodes, *WorkerNodes) {
+	hosts := cfg.Hosts
+	etcdNodes := EtcdNodes{}
+	masterNodes := MasterNodes{}
+	workerNodes := WorkerNodes{}
+
+	for _, host := range hosts {
+		clusterNode := ClusterNodeCfg{Node: host}
+		for _, role := range host.Role {
+			if role == "etcd" {
+				clusterNode.IsEtcd = true
+			}
+			if role == "master" {
+				clusterNode.IsMaster = true
+			}
+			if role == "worker" {
+				clusterNode.IsWorker = true
+			}
+		}
+		if clusterNode.IsEtcd == true {
+			etcdNodes.Hosts = append(etcdNodes.Hosts, clusterNode)
+		}
+		if clusterNode.IsMaster == true {
+			masterNodes.Hosts = append(masterNodes.Hosts, clusterNode)
+		}
+		if clusterNode.IsWorker == true {
+			workerNodes.Hosts = append(workerNodes.Hosts, clusterNode)
+		}
+	}
+	return &etcdNodes, &masterNodes, &workerNodes
 }

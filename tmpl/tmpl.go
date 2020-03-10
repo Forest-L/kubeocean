@@ -3,7 +3,6 @@ package tmpl
 import (
 	"fmt"
 	"github.com/pixiake/kubeocean/util"
-	"github.com/pixiake/kubeocean/util/cluster"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"text/template"
@@ -53,10 +52,10 @@ func createDirectory(directory []string) {
 	}
 }
 
-func GenerateKubeletFiles(cfg cluster.ClusterCfg) {
+func GenerateKubeletFiles(repo string, version string) {
 	kubeContainerInfo := KubeContainer{}
-	kubeContainerInfo.Repo = cfg.KubeImageRepo
-	kubeContainerInfo.Version = cfg.KubeVersion
+	kubeContainerInfo.Repo = repo
+	kubeContainerInfo.Version = version
 
 	dir := []string{"/etc/systemd/system/kubelet.service.d"}
 	createDirectory(dir)

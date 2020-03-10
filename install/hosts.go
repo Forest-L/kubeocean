@@ -112,3 +112,14 @@ func GetKubeadm(host *cluster.NodeCfg, version string) {
 		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "chmod +x /usr/local/bin/kubeadm")
 	}
 }
+
+func SetKubeletService(host *cluster.NodeCfg, repo string, version string) {
+	tmpl.GenerateKubeletFiles(repo, version)
+
+	if host != nil {
+		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "mkdir -p /etc/systemd/system/kubelet.service.d")
+		ssh.PushFile(host.Address, "/usr/local/bin/kubelet", "/usr/local/bin", host.User, host.Port, host.Password, true)
+		ssh.PushFile(host.Address, "/etc/systemd/system/kubelet.service", "/etc/systemd/system", host.User, host.Port, host.Password, true)
+		ssh.PushFile(host.Address, "/etc/systemd/system/kubelet.service.d/kubelet-contain.conf", "/etc/systemd/system/kubelet.service.d", host.User, host.Port, host.Password, true)
+	}
+}

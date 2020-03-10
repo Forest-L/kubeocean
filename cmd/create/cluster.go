@@ -74,7 +74,7 @@ func createAllinone() {
 		log.Fatalf("failed to initsystem cluster: %v", err)
 	}
 	log.Info("Generate Kubelet Config")
-	tmpl.GenerateKubeletFiles(clusterCfg)
+	//tmpl.GenerateKubeletFiles(clusterCfg)
 	log.Info("Init Cluster")
 	if err := exec.Command("/usr/local/bin/kubeadm", "initsystem").Run(); err != nil {
 		log.Fatalf("failed to initsystem cluster: %v", err)
@@ -99,26 +99,15 @@ func createAllinone() {
 
 func createMultiNodes(cfg *cluster.ClusterCfg) {
 	hosts := cfg.Hosts
-	etcdNodes := cluster.EtcdNodes{}
-	masterNodes := cluster.MasterNodes{}
-	workerNodes := cluster.WorkerNodes{}
-	for _, host := range hosts {
-		for _, role := range host.Role {
-			if role == "etcd" {
-				etcdNodes.Hosts = append(etcdNodes.Hosts, host)
-			}
-			if role == "master" {
-				masterNodes.Hosts = append(masterNodes.Hosts, host)
-			}
-			if role == "worker" {
-				workerNodes.Hosts = append(workerNodes.Hosts, host)
-			}
-		}
-	}
+	etcdNodes, masterNodes, workerNodes := cfg.GroupHosts()
 	for _, host := range hosts {
 		install.InitOS(&host)
 		install.DockerInstall(&host)
 		install.PullHyperKubeImage(&host, cfg.KubeImageRepo, cfg.KubeVersion)
 		install.GetKubeadm(&host, cfg.KubeVersion)
+		install.SetKubeletService(&host, cfg.KubeImageRepo, cfg.KubeVersion)
 	}
+	install.SetUpEtcd(etcdNodes)
+	install.InitCluster(masterNodes)
+	install.AddWorkers(workerNodes)
 }
