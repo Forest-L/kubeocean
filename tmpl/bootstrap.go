@@ -1,11 +1,7 @@
 package tmpl
 
 import (
-	"fmt"
 	"github.com/lithammer/dedent"
-	"github.com/pixiake/kubeocean/util"
-	log "github.com/sirupsen/logrus"
-	"os"
 	"text/template"
 )
 

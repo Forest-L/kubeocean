@@ -50,40 +50,47 @@ func createAllinone() {
 	clusterCfg := cluster.ClusterCfg{}
 	clusterCfg.KubeImageRepo = cluster.DefaultKubeImageRepo
 	clusterCfg.KubeVersion = cluster.DefaultKubeVersion
+	log.Info("BootStrap")
 	tmpl.GenerateBootStrapScript()
 	if err := exec.Command("/bin/bash", "/tmp/kubeocean/bootStrapScript.sh").Run(); err != nil {
 		log.Errorf("bootstrap is failed: %v", err)
 	}
+	log.Info("Pull Kube Image")
 	hyperKubeImagePull := fmt.Sprintf("docker pull %s/google-containers/hyperkube:%s", cluster.DefaultKubeImageRepo, cluster.DefaultKubeVersion)
-	if err := exec.Command("/bin/bash", hyperKubeImagePull).Run(); err != nil {
+	fmt.Println(hyperKubeImagePull)
+	if err := exec.Command("/bin/sh", "-c", hyperKubeImagePull).Run(); err != nil {
 		log.Errorf("hyperkube image pull failed: %v", err)
 	}
-
-	kubeadmDownLoad := fmt.Sprintf("curl -o /usr/local/bin/kubeadm https://kubernetes-release.pek3b.qingstor.com/release/%s//bin/linux/amd64/kubeadm", cluster.DefaultKubeVersion)
-	if err := exec.Command("/bin/bash", kubeadmDownLoad).Run(); err != nil {
-		log.Fatal("failed to init cluster: %v", err)
+	log.Info("Download Kubeadm")
+	kubeadmDownLoad := fmt.Sprintf("curl -o /usr/local/bin/kubeadm https://kubernetes-release.pek3b.qingstor.com/release/%s/bin/linux/amd64/kubeadm", cluster.DefaultKubeVersion)
+	fmt.Println(kubeadmDownLoad)
+	if err := exec.Command("/bin/sh", "-c", kubeadmDownLoad).Run(); err != nil {
+		log.Fatalf("failed to init cluster: %v", err)
 	}
 
 	if err := exec.Command("/bin/sh", "-c", "chmod +x /usr/local/bin/kubeadm").Run(); err != nil {
-		log.Fatal("failed to init cluster: %v", err)
+		log.Fatalf("failed to init cluster: %v", err)
 	}
+	log.Info("Generate Kubelet Config")
 	tmpl.GenerateKubeletFiles(clusterCfg)
+	log.Info("Init Cluster")
 	if err := exec.Command("/usr/local/bin/kubeadm", "init").Run(); err != nil {
-		log.Fatal("failed to init cluster: %v", err)
+		log.Fatalf("failed to init cluster: %v", err)
 	}
-
+	log.Info("Prepare Cluster")
 	cmdconfig := "mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config"
 	if err := exec.Command("/bin/sh", "-c", cmdconfig).Run(); err != nil {
-		log.Fatal("failed to create config: %v", err)
-	}
-	cmdcalico := "kubectl apply -f https://docs.projectcalico.org/v3.8/manifests/calico.yaml"
-	if err := exec.Command("/bin/sh", "-c", cmdcalico).Run(); err != nil {
-		log.Fatal("failed to create config: %v", err)
+		log.Fatalf("failed to create config: %v", err)
 	}
 
 	cmdkubectl := "docker cp kubelet:/usr/local/bin/kubectl /usr/local/bin/kubectl"
 	if err := exec.Command("/bin/sh", "-c", cmdkubectl).Run(); err != nil {
-		log.Fatal("failed to create config: %v", err)
+		log.Fatalf("failed to create config: %v", err)
+	}
+
+	cmdcalico := "kubectl apply -f https://docs.projectcalico.org/v3.8/manifests/calico.yaml"
+	if err := exec.Command("/bin/sh", "-c", cmdcalico).Run(); err != nil {
+		log.Fatalf("failed to create config: %v", err)
 	}
 
 }
