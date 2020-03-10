@@ -2,6 +2,7 @@ package create
 
 import (
 	"fmt"
+	"github.com/pixiake/kubeocean/install"
 	"github.com/pixiake/kubeocean/tmpl"
 	"github.com/pixiake/kubeocean/util/cluster"
 	log "github.com/sirupsen/logrus"
@@ -65,17 +66,17 @@ func createAllinone() {
 	kubeadmDownLoad := fmt.Sprintf("curl -o /usr/local/bin/kubeadm https://kubernetes-release.pek3b.qingstor.com/release/%s/bin/linux/amd64/kubeadm", cluster.DefaultKubeVersion)
 	fmt.Println(kubeadmDownLoad)
 	if err := exec.Command("/bin/sh", "-c", kubeadmDownLoad).Run(); err != nil {
-		log.Fatalf("failed to init cluster: %v", err)
+		log.Fatalf("failed to initsystem cluster: %v", err)
 	}
 
 	if err := exec.Command("/bin/sh", "-c", "chmod +x /usr/local/bin/kubeadm").Run(); err != nil {
-		log.Fatalf("failed to init cluster: %v", err)
+		log.Fatalf("failed to initsystem cluster: %v", err)
 	}
 	log.Info("Generate Kubelet Config")
 	tmpl.GenerateKubeletFiles(clusterCfg)
 	log.Info("Init Cluster")
-	if err := exec.Command("/usr/local/bin/kubeadm", "init").Run(); err != nil {
-		log.Fatalf("failed to init cluster: %v", err)
+	if err := exec.Command("/usr/local/bin/kubeadm", "initsystem").Run(); err != nil {
+		log.Fatalf("failed to initsystem cluster: %v", err)
 	}
 	log.Info("Prepare Cluster")
 	cmdconfig := "mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config"
@@ -113,5 +114,7 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 			}
 		}
 	}
-
+	for _, host := range hosts {
+		install.DockerInstall(&host)
+	}
 }

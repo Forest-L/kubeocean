@@ -1,7 +1,7 @@
 package ssh
 
-func PullFile(host string, src string, dst string, user string, port string, password string, force bool, encFlag bool) {
-	puser := NewUser(user, port, password, force, encFlag)
+func PullFile(host string, src string, dst string, user string, port string, password string, force bool) {
+	puser := NewUser(user, port, password, force)
 	SinglePull(host, src, dst, puser, force)
 }
 

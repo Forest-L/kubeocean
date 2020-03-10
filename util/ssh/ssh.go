@@ -23,20 +23,18 @@ const (
 )
 
 type CommonUser struct {
-	user    string
-	port    string
-	psw     string
-	force   bool
-	encflag bool
+	user  string
+	port  string
+	psw   string
+	force bool
 }
 
-func NewUser(user, port, psw string, force, encflag bool) *CommonUser {
+func NewUser(user, port, psw string, force bool) *CommonUser {
 	return &CommonUser{
-		user:    user,
-		port:    port,
-		psw:     psw,
-		force:   force,
-		encflag: encflag,
+		user:  user,
+		port:  port,
+		psw:   psw,
+		force: force,
 	}
 }
 

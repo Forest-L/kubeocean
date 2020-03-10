@@ -1,7 +1,7 @@
 package ssh
 
-func PushFile(host string, src string, dst string, user string, port string, password string, force bool, encFlag bool) {
-	puser := NewUser(user, port, password, force, encFlag)
+func PushFile(host string, src string, dst string, user string, port string, password string, force bool) {
+	puser := NewUser(user, port, password, force)
 	SinglePush(host, src, dst, puser, force)
 }
 
