@@ -1,46 +1,13 @@
 package phases
 
 import (
-	"fmt"
-	"github.com/pixiake/kubeocean/bootstrap"
-	//"github.com/pixiake/kubeocean/statics"
 	"github.com/pixiake/kubeocean/util/cluster"
-	"github.com/pixiake/kubeocean/util/ssh-bak"
 	log "github.com/sirupsen/logrus"
 	"os/exec"
 )
 
 func CreateCluster(configpath string) error {
-	etcdHosts := ssh_bak.Cluster{}
-	masterHosts := ssh_bak.Cluster{}
-	workerHosts := ssh_bak.Cluster{}
-	clusterinfo, err := ssh_bak.GetYamlFile(configpath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, node := range clusterinfo {
-		fmt.Printf("%v", node)
-		for _, role := range node.Roles {
-			log.Info("has role: " + role)
-			switch role {
-			case "master":
-				masterHosts.Hosts = append(masterHosts.Hosts, node)
-				fmt.Println("I am master")
-			case "node":
-				workerHosts.Hosts = append(workerHosts.Hosts, node)
-				fmt.Println("I am node")
-			case "etcd":
-				etcdHosts.Hosts = append(etcdHosts.Hosts, node)
-				fmt.Println("I am etcd")
-			default:
-				return fmt.Errorf("Failed to recognize host [%s] role %s", node.Ip, role)
-			}
-		}
-	}
 
-	bootstrap.SwapOff()
-	bootstrap.SystemInit()
-	bootstrap.Modprobe()
 	CreateKubeletService("kubelet", cluster.DefaultKubeVersion, cluster.DefaultKubeImageRepo)
 
 	//err1 := static.RestoreAssets("/usr/bin", "kubeadm")
