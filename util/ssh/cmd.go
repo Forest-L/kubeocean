@@ -1,7 +1,5 @@
 package ssh
 
-import "errors"
-
 func CmdExec(host string, user string, port string, password string, force bool, encFlag bool, cmd string) {
 	puser := NewUser(user, port, password, force, encFlag)
 	SingleRun(host, cmd, puser, force)
