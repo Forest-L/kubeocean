@@ -61,6 +61,7 @@ func InitOS(host *cluster.NodeCfg) {
 			log.Errorf("Bootstrap is Failed: %v", err)
 		}
 	} else {
+		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "mkdir -p /tmp/kubeocean")
 		ssh.PushFile(host.Address, src, dst, host.User, host.Port, host.Password, true)
 		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, initOsCmd); err != nil {
 			log.Fatalf("Bootstrap is Failed (%s):\n", host.Address)
