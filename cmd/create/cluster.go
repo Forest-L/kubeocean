@@ -116,6 +116,6 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 		}
 	}
 	for _, host := range hosts {
-		go install.DockerInstall(&host)
+		install.DockerInstall(&host)
 	}
 }
