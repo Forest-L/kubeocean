@@ -5,16 +5,16 @@ import (
 	"github.com/pixiake/kubeocean/bootstrap"
 	//"github.com/pixiake/kubeocean/statics"
 	"github.com/pixiake/kubeocean/util/cluster"
-	"github.com/pixiake/kubeocean/util/ssh"
+	"github.com/pixiake/kubeocean/util/ssh-bak"
 	log "github.com/sirupsen/logrus"
 	"os/exec"
 )
 
 func CreateCluster(configpath string) error {
-	etcdHosts := ssh.Cluster{}
-	masterHosts := ssh.Cluster{}
-	workerHosts := ssh.Cluster{}
-	clusterinfo, err := ssh.GetYamlFile(configpath)
+	etcdHosts := ssh_bak.Cluster{}
+	masterHosts := ssh_bak.Cluster{}
+	workerHosts := ssh_bak.Cluster{}
+	clusterinfo, err := ssh_bak.GetYamlFile(configpath)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -74,7 +74,7 @@ func clusterConfig() error {
 		return err
 	}
 
-	//sshKeyPath, err := getConfig(reader, "Cluster Level SSH Private Key Path", "~/.ssh/id_rsa")
+	//sshKeyPath, err := getConfig(reader, "Cluster Level SSH Private Key Path", "~/.ssh-bak/id_rsa")
 	//if err != nil {
 	//	return err
 	//}

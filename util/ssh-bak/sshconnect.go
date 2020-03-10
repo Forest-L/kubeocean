@@ -1,4 +1,4 @@
-package ssh
+package ssh_bak
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-//ssh connect
+//ssh-bak connect
 func connect(user, password, host, key string, port int, cipherList []string) (*ssh.Session, error) {
 	var (
 		auth         []ssh.AuthMethod
@@ -69,11 +69,11 @@ func connect(user, password, host, key string, port int, cipherList []string) (*
 		},
 	}
 	log.Infof("%v", clientConfig.User)
-	// connet to ssh
+	// connet to ssh-bak
 	addr = fmt.Sprintf("%s:%d", host, port)
 	log.Info(addr)
 	if client, err = ssh.Dial("tcp", addr, clientConfig); err != nil {
-		log.Errorf("ssh dial failed: %v", err)
+		log.Errorf("ssh-bak dial failed: %v", err)
 		return nil, err
 	}
 
@@ -147,7 +147,7 @@ func SftpConnect(user, password, host, key string, port int, cipherList []string
 		},
 	}
 
-	// connet to ssh
+	// connet to ssh-bak
 	addr = fmt.Sprintf("%s:%d", host, port)
 
 	if client, err = ssh.Dial("tcp", addr, clientConfig); err != nil {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/pixiake/kubeocean/util"
 	"github.com/pixiake/kubeocean/util/cluster"
-	"github.com/pixiake/kubeocean/util/ssh"
+	"github.com/pixiake/kubeocean/util/ssh-bak"
 	"log"
 	"os"
 	"os/exec"
@@ -29,7 +29,7 @@ func SystemInit(isLocal bool, host *cluster.NodeCfg) error {
 				return err
 			}
 			cmdList := []string{cmd}
-			err_exec := ssh.DosshRun(host.User, host.Password, host.Address, key, cmdList, portInt, nil)
+			err_exec := ssh_bak.DosshRun(host.User, host.Password, host.Address, key, cmdList, portInt, nil)
 			if err_exec != nil {
 				return err_exec
 			}
@@ -57,7 +57,7 @@ func SwapOff(isLocal bool, host *cluster.NodeCfg) error {
 			return err
 		}
 		cmdList := []string{cmd, disableswap}
-		err_exec := ssh.DosshRun(host.User, host.Password, host.Address, key, cmdList, portInt, nil)
+		err_exec := ssh_bak.DosshRun(host.User, host.Password, host.Address, key, cmdList, portInt, nil)
 		if err_exec != nil {
 			return err_exec
 		}
