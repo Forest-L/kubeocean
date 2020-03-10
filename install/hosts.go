@@ -103,9 +103,12 @@ func GetKubeadm(host *cluster.NodeCfg, version string) {
 		if err := exec.Command("/bin/sh", "-c", getKubeadmCmd).Run(); err != nil {
 			log.Errorf("Failed to get kubeadm: %v", err)
 		}
+		exec.Command("/bin/sh", "-c", "chmod +x /usr/local/bin/kubeadm").Run()
+
 	} else {
 		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, getKubeadmCmd); err != nil {
 			log.Fatalf("Failed to get kubeadm (%s):\n", host.Address)
 		}
+		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "chmod +x /usr/local/bin/kubeadm")
 	}
 }
