@@ -38,7 +38,8 @@ func createCluster(clusterCfgFile string, kubeadmCfgFile string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(clusterInfo)
+		//fmt.Println(clusterInfo)
+		log.Info("Welcome to KubeOcean")
 		createMultiNodes(clusterInfo)
 	} else {
 		log.Info("Init a allinone cluster")
@@ -115,6 +116,6 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 		}
 	}
 	for _, host := range hosts {
-		install.DockerInstall(&host)
+		go install.DockerInstall(&host)
 	}
 }
