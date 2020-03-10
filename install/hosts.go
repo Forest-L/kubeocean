@@ -54,7 +54,7 @@ func InitOS(host *cluster.NodeCfg) {
 	log.Info("BootStrap")
 	tmpl.GenerateBootStrapScript()
 	src := "/tmp/kubeocean/bootStrapScript.sh"
-	dst := "/tmp/kubeocean/bootStrapScript.sh"
+	dst := "/tmp/kubeocean"
 	initOsCmd := fmt.Sprintf("/bin/bash %s", src)
 	if host == nil {
 		if err := exec.Command("/bin/bash", src).Run(); err != nil {
