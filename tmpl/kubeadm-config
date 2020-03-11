@@ -31,7 +31,6 @@ kubernetesVersion: v1.17.3
 controlPlaneEndpoint: lb.kubesphere.local:6443
 certificatesDir: /etc/kubernetes/ssl
 imageRepository: gcr.azk8s.cn/google-containers
-useHyperKubeImage: True
 
 apiServer:
   extraArgs:

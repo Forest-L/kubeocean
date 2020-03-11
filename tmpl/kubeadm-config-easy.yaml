@@ -1,12 +1,4 @@
-package tmpl
-
-import (
-	"github.com/lithammer/dedent"
-	"text/template"
-)
-
-var KubeadmCfgTempl = template.Must(template.New("kubeadmCfg").Parse(
-	dedent.Dedent(`---
+---
 apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
 etcd:
@@ -31,4 +23,4 @@ apiServer:
   extraArgs:
     authorization-mode: Node,RBAC
   timeoutForControlPlane: 4m0s
-    `)))
+

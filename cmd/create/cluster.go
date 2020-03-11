@@ -103,11 +103,11 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 	for _, host := range hosts {
 		install.InitOS(&host)
 		install.DockerInstall(&host)
-		install.PullHyperKubeImage(&host, cfg.KubeImageRepo, cfg.KubeVersion)
-		install.GetKubeadm(&host, cfg.KubeVersion)
+		//install.PullHyperKubeImage(&host, cfg.KubeImageRepo, cfg.KubeVersion)
+		install.GetKubeBinary(&host, cfg.KubeVersion)
 		install.SetKubeletService(&host, cfg.KubeImageRepo, cfg.KubeVersion)
 	}
 	install.SetUpEtcd(etcdNodes)
-	install.InitCluster(masterNodes)
+	install.InitCluster(cfg, masterNodes)
 	install.AddWorkers(workerNodes)
 }

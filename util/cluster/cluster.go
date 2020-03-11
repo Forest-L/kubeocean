@@ -1,5 +1,7 @@
 package cluster
 
+import "fmt"
+
 const (
 	DefaultSSHPort        = "22"
 	DefaultDockerSockPath = "/var/run/docker.sock"
@@ -10,6 +12,7 @@ const (
 	DefaultServiceCIDR    = "10.233.0.0/18"
 	DefaultKubeVersion    = "v1.17.3"
 	DefaultKubeImageRepo  = "gcr.azk8s.cn"
+	DefaultClusterName    = "cluster.local"
 	ETCDRole              = "etcd"
 	MasterRole            = "master"
 	WorkerRole            = "worker"
@@ -86,7 +89,12 @@ type LBKubeApiserverCfg struct {
 }
 
 type KubeadmCfg struct {
-	AdvertiseAddress string
+	ClusterName          string
+	controlPlaneEndpoint string
+	PodSubnet            string
+	ServiceSubnet        string
+	ImageRepo            string
+	Version              string
 }
 
 func (cfg *ClusterCfg) GroupHosts() (*EtcdNodes, *MasterNodes, *WorkerNodes) {
@@ -119,4 +127,20 @@ func (cfg *ClusterCfg) GroupHosts() (*EtcdNodes, *MasterNodes, *WorkerNodes) {
 		}
 	}
 	return &etcdNodes, &masterNodes, &workerNodes
+}
+
+func (cfg *ClusterCfg) GenerateKubeadmCfg() *KubeadmCfg {
+	kubeadm := KubeadmCfg{}
+	kubeadm.ClusterName = DefaultClusterName
+	kubeadm.PodSubnet = cfg.Network.KubePodsCIDR
+	kubeadm.ServiceSubnet = cfg.Network.KubeServiceCIDR
+	kubeadm.ImageRepo = cfg.KubeImageRepo
+	kubeadm.Version = cfg.KubeVersion
+	if cfg.LBKubeApiserver.Domain == "" {
+		kubeadm.controlPlaneEndpoint = fmt.Sprintf("%s:%s", DefaultLBDomain, DefaultLBPort)
+	} else {
+		kubeadm.controlPlaneEndpoint = fmt.Sprintf("%s:%s", cfg.LBKubeApiserver.Domain, cfg.LBKubeApiserver.Port)
+	}
+
+	return &kubeadm
 }

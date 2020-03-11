@@ -46,3 +46,9 @@ else
    modprobe nf_conntrack
    echo 'nf_conntrack' > /etc/modules-load.d/kube_proxy-ipvs.conf
 fi
+
+os_info=`cat /etc/os-release`
+
+if [[ $os_info =~ "Ubuntu" || $os_info =~ "Debian" ]]; then
+    sudo apt install -y iptables arptables ebtables > /dev/null
+fi
