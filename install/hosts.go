@@ -11,7 +11,7 @@ import (
 
 func InjectHosts(cfg *cluster.ClusterCfg) {
 	hosts := cfg.GenerateHosts()
-	injectHostsCmd := fmt.Sprintf("echo \"%s\"", hosts)
+	injectHostsCmd := fmt.Sprintf("echo \"%s\"  >> /etc/hosts", hosts)
 	removeDuplicatesCmd := "awk ' !x[$0]++{print > \"/etc/hosts\"}' /etc/hosts"
 	if cfg.Hosts == nil {
 		if err := exec.Command("sudo", injectHostsCmd).Run(); err != nil {

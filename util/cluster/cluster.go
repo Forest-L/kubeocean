@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/pixiake/kubeocean/util"
 	"log"
-	"math/rand"
 	"os"
 	"strings"
 )
@@ -218,7 +217,7 @@ func (cfg *ClusterCfg) GenerateHosts() string {
 
 		for _, host := range cfg.Hosts {
 			if host.HostName != "" {
-				hostsList = append(hostsList, fmt.Sprintf("%s %s", host.InternalAddress, host.HostName))
+				hostsList = append(hostsList, fmt.Sprintf("%s  %s", host.InternalAddress, host.HostName))
 			}
 		}
 	}

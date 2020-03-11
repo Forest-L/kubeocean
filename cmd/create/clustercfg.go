@@ -188,7 +188,7 @@ func getHostConfig(reader *bufio.Reader, index int) (*cluster.NodeCfg, bool, err
 	}
 	host.Password = password
 
-	hostRole, err := getConfig(reader, fmt.Sprintf("What's host (%s) role?(0: etcd, 1: master, 2: worker)", address), "012")
+	hostRole, err := getConfig(reader, fmt.Sprintf("What's host (%s) role? (0: etcd, 1: master, 2: worker)", address), "012")
 	if err != nil {
 		return nil, false, err
 	}

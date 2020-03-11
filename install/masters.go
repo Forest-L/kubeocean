@@ -33,7 +33,7 @@ func InitCluster(cfg *cluster.ClusterCfg, masters *cluster.MasterNodes) {
 					log.Fatalf("Failed to generate kubeconfig (%s):\n", master.Node.Address)
 				}
 
-				deployCalicoCmd := "sudo kubectl apply -f https://docs.projectcalico.org/v3.8/manifests/calico.yaml"
+				deployCalicoCmd := "sudo /usr/local/bin/kubectl apply -f https://docs.projectcalico.org/v3.8/manifests/calico.yaml"
 				if err := ssh.CmdExec(master.Node.Address, master.Node.User, master.Node.Port, master.Node.Password, false, deployCalicoCmd); err != nil {
 					log.Fatalf("Failed to deploy calico (%s):\n", master.Node.Address)
 				}
