@@ -186,9 +186,9 @@ func (cfg *ClusterCfg) GenerateCertSANs(clusterName string) []string {
 		}
 	}
 	if cfg.Network.KubeServiceCIDR == "" {
-		extraCertSANs = append(extraCertSANs, util.ParseIp(DefaultServiceCIDR)[1])
+		extraCertSANs = append(extraCertSANs, util.ParseIp(DefaultServiceCIDR)[0])
 	} else {
-		extraCertSANs = append(extraCertSANs, util.ParseIp(cfg.Network.KubeServiceCIDR)[1])
+		extraCertSANs = append(extraCertSANs, util.ParseIp(cfg.Network.KubeServiceCIDR)[0])
 	}
 	defaultCertSANs = append(defaultCertSANs, extraCertSANs...)
 	return defaultCertSANs

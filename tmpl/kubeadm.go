@@ -31,4 +31,8 @@ apiServer:
   extraArgs:
     authorization-mode: Node,RBAC
   timeoutForControlPlane: 4m0s
+  certSANs:
+    {{- range .CertSANs }}
+    - {{ . }}
+    {{- end }}
     `)))
