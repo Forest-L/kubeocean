@@ -22,7 +22,7 @@ imageRepository: {{ .ImageRepo }}/google-containers
 kubernetesVersion: {{ .Version }}
 certificatesDir: /etc/kubernetes/ssl
 clusterName: {{ .ClusterName }}
-controlPlaneEndpoint: {{ .controlPlaneEndpoint }}
+controlPlaneEndpoint: {{ .ControlPlaneEndpoint }}
 networking:
   dnsDomain: {{ .ClusterName }}
   podSubnet: {{ .PodSubnet }}

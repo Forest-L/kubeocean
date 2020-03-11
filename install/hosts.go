@@ -9,6 +9,25 @@ import (
 	"os/exec"
 )
 
+func InjectHosts(cfg *cluster.ClusterCfg) {
+	hosts := cfg.GenerateHosts()
+	injectHostsCmd := fmt.Sprintf("echo \"%s\"", hosts)
+	removeDuplicatesCmd := "awk ' !x[$0]++{print > \"/etc/hosts\"}' /etc/hosts"
+	if cfg.Hosts == nil {
+		if err := exec.Command("sudo", injectHostsCmd).Run(); err != nil {
+			log.Fatal("Failed to Inject Hosts:\n")
+		}
+		exec.Command("sudo", removeDuplicatesCmd).Run()
+	} else {
+		for _, host := range cfg.Hosts {
+			if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, fmt.Sprintf("sudo %s", injectHostsCmd)); err != nil {
+				log.Fatal("Failed to Inject Hosts:\n")
+			}
+			ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, fmt.Sprintf("sudo %s", removeDuplicatesCmd))
+		}
+	}
+}
+
 func DockerInstall(host *cluster.NodeCfg) {
 	if checkDocker(host) == false {
 		installDocker(host)
@@ -69,29 +88,6 @@ func InitOS(host *cluster.NodeCfg) {
 	}
 }
 
-//func PullHyperKubeImage(host *cluster.NodeCfg, repo string, version string) {
-//	var hyperKubeImage string
-//	var (
-//
-//	)
-//	if repo == "" && version == "" {
-//		hyperKubeImage = fmt.Sprintf("%s/google-containers/hyperkube:%s", cluster.DefaultKubeImageRepo, cluster.DefaultKubeVersion)
-//	} else {
-//		hyperKubeImage = fmt.Sprintf("%s/google-containers/hyperkube:%s", repo, version)
-//	}
-//
-//	pullHyperKubeImageCmd := fmt.Sprintf("docker pull %s", hyperKubeImage)
-//	if host == nil {
-//		if err := exec.Command("/bin/sh", "-c", pullHyperKubeImageCmd).Run(); err != nil {
-//			log.Errorf("Failed to pull hyperKube image: %v", err)
-//		}
-//	} else {
-//		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, pullHyperKubeImageCmd); err != nil {
-//			log.Fatalf("Failed to pull hyperKube image (%s):\n", host.Address)
-//		}
-//	}
-//}
-
 func GetKubeBinary(host *cluster.NodeCfg, version string) {
 
 	var kubeVersion string
@@ -107,7 +103,7 @@ func GetKubeBinary(host *cluster.NodeCfg, version string) {
 	getKubeadmCmd := fmt.Sprintf("curl -o /tmp/kubeocean/kubeadm  %s", kubeadmUrl)
 	getKubeletCmd := fmt.Sprintf("curl -o /tmp/kubeocean/kubelet  %s", kubeletUrl)
 	getKubectlCmd := fmt.Sprintf("curl -o /tmp/kubeocean/kubectl  %s", kubectlUrl)
-	getKubeCniCmd := fmt.Sprintf("curl -o /tmp/kubeocean/kubectl  %s", kubeCniUrl)
+	getKubeCniCmd := fmt.Sprintf("curl -o /tmp/kubeocean/cni-plugins-linux-amd64-v0.8.1.tgz  %s", kubeCniUrl)
 	if host == nil {
 		if err := exec.Command("/bin/sh", "-c", getKubeadmCmd).Run(); err != nil {
 			log.Errorf("Failed to get kubeadm: %v", err)
@@ -120,6 +116,7 @@ func GetKubeBinary(host *cluster.NodeCfg, version string) {
 		}
 		exec.Command("/bin/sh", "-c", "cp /tmp/kubeocean/kubelet /usr/local/bin/kubelet").Run()
 		exec.Command("/bin/sh", "-c", "chmod +x /usr/local/bin/kubelet").Run()
+		exec.Command("/bin/sh", "-c", "ln -s /usr/local/bin/kubelet /usr/bin/kubelet").Run()
 
 		if err := exec.Command("/bin/sh", "-c", getKubectlCmd).Run(); err != nil {
 			log.Errorf("Failed to get kubectl: %v", err)
@@ -150,15 +147,16 @@ func GetKubeBinary(host *cluster.NodeCfg, version string) {
 		}
 		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "cp /tmp/kubeocean/kubelet /usr/local/bin/kubelet")
 		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "chmod +x /usr/local/bin/kubelet")
+		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "ln -s /usr/local/bin/kubelet /usr/bin/kubelet")
 
-		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, getKubeletCmd); err != nil {
+		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, getKubectlCmd); err != nil {
 			log.Fatalf("Failed to get kubectl (%s):\n", host.Address)
 		}
 		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "cp /tmp/kubeocean/kubectl /usr/local/bin/kubectl")
 		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "chmod +x /usr/local/bin/kubectl")
 
 		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, getKubeCniCmd); err != nil {
-			log.Fatalf("Failed to get kubectl (%s):\n", host.Address)
+			log.Fatalf("Failed to get kubecni (%s):\n", host.Address)
 		}
 		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "mkdir -p /opt/cni/bin")
 		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "tar -zxf /tmp/kubeocean/cni-plugins-linux-amd64-v0.8.1.tgz -C /opt/cni/bin")

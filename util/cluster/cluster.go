@@ -2,6 +2,11 @@ package cluster
 
 import (
 	"fmt"
+	"github.com/pixiake/kubeocean/util"
+	"log"
+	"math/rand"
+	"os"
+	"strings"
 )
 
 const (
@@ -96,7 +101,7 @@ type LBKubeApiserverCfg struct {
 
 type KubeadmCfg struct {
 	ClusterName          string
-	controlPlaneEndpoint string
+	ControlPlaneEndpoint string
 	PodSubnet            string
 	ServiceSubnet        string
 	ImageRepo            string
@@ -138,23 +143,34 @@ func (cfg *ClusterCfg) GroupHosts() (*EtcdNodes, *MasterNodes, *WorkerNodes) {
 
 func (cfg *ClusterCfg) GenerateKubeadmCfg() *KubeadmCfg {
 	kubeadm := KubeadmCfg{}
-	clusterSvc := fmt.Sprintf("kubernetes.default.svc.%s", kubeadm.ClusterName)
-	defaultCertSANs := []string{"kubernetes", "kubernetes.default", "kubernetes.default.svc", clusterSvc, "localhost", "127.0.0.1"}
-	extraCertSANs := []string{}
 	kubeadm.ClusterName = DefaultClusterName
 	kubeadm.PodSubnet = cfg.Network.KubePodsCIDR
 	kubeadm.ServiceSubnet = cfg.Network.KubeServiceCIDR
 	kubeadm.ImageRepo = cfg.KubeImageRepo
 	kubeadm.Version = cfg.KubeVersion
 	if cfg.LBKubeApiserver.Domain == "" {
-		kubeadm.controlPlaneEndpoint = fmt.Sprintf("%s:%s", DefaultLBDomain, DefaultLBPort)
+		kubeadm.ControlPlaneEndpoint = fmt.Sprintf("%s:%s", DefaultLBDomain, DefaultLBPort)
+	} else {
+		kubeadm.ControlPlaneEndpoint = fmt.Sprintf("%s:%s", cfg.LBKubeApiserver.Domain, cfg.LBKubeApiserver.Port)
+	}
+	if cfg.LBKubeApiserver.Address == "" {
+		kubeadm.ControlPlaneEndpoint = fmt.Sprintf("%s:%s", DefaultLBDomain, DefaultLBPort)
+	}
+
+	kubeadm.CertSANs = cfg.GenerateCertSANs(kubeadm.ClusterName)
+	return &kubeadm
+}
+
+func (cfg *ClusterCfg) GenerateCertSANs(clusterName string) []string {
+	clusterSvc := fmt.Sprintf("kubernetes.default.svc.%s", clusterName)
+	defaultCertSANs := []string{"kubernetes", "kubernetes.default", "kubernetes.default.svc", clusterSvc, "localhost", "127.0.0.1"}
+	extraCertSANs := []string{}
+	if cfg.LBKubeApiserver.Domain == "" {
 		extraCertSANs = append(extraCertSANs, DefaultLBDomain)
 	} else {
-		kubeadm.controlPlaneEndpoint = fmt.Sprintf("%s:%s", cfg.LBKubeApiserver.Domain, cfg.LBKubeApiserver.Port)
 		extraCertSANs = append(extraCertSANs, cfg.LBKubeApiserver.Domain)
 	}
 	if cfg.LBKubeApiserver.Address != "" {
-		kubeadm.controlPlaneEndpoint = fmt.Sprintf("%s:%s", DefaultLBDomain, DefaultLBPort)
 		extraCertSANs = append(extraCertSANs, cfg.LBKubeApiserver.Address)
 	}
 	if cfg.Hosts != nil {
@@ -162,9 +178,52 @@ func (cfg *ClusterCfg) GenerateKubeadmCfg() *KubeadmCfg {
 			if host.HostName != "" {
 				extraCertSANs = append(extraCertSANs, host.HostName)
 			}
+			if host.Address != "" {
+				extraCertSANs = append(extraCertSANs, host.Address)
+			}
+			if host.InternalAddress != "" && host.InternalAddress != host.Address {
+				extraCertSANs = append(extraCertSANs, host.InternalAddress)
+			}
+		}
+	}
+	if cfg.Network.KubeServiceCIDR == "" {
+		extraCertSANs = append(extraCertSANs, util.ParseIp(DefaultServiceCIDR)[1])
+	} else {
+		extraCertSANs = append(extraCertSANs, util.ParseIp(cfg.Network.KubeServiceCIDR)[1])
+	}
+	defaultCertSANs = append(defaultCertSANs, extraCertSANs...)
+	return defaultCertSANs
+}
+
+func (cfg *ClusterCfg) GenerateHosts() string {
+	var lbHost string
+	hostsList := []string{}
+
+	_, masters, _ := cfg.GroupHosts()
+	if cfg.Hosts == nil {
+		localIp, err := util.GetLocalIP()
+		if err != nil {
+			log.Fatal(err)
+			os.Exit(1)
+		}
+		lbHost = fmt.Sprintf("%s  %s", localIp, DefaultLBDomain)
+	} else {
+		if cfg.LBKubeApiserver.Address != "" {
+			lbHost = fmt.Sprintf("%s  %s", cfg.LBKubeApiserver.Address, cfg.LBKubeApiserver.Domain)
+		} else {
+			if len(masters.Hosts) == 1 {
+				lbHost = fmt.Sprintf("%s  %s", masters.Hosts[0].Node.InternalAddress, DefaultLBDomain)
+			}
+		}
+
+		for _, host := range cfg.Hosts {
+			if host.HostName != "" {
+				hostsList = append(hostsList, fmt.Sprintf("%s %s", host.InternalAddress, host.HostName))
+			}
 		}
 	}
 
-	kubeadm.CertSANs = append(defaultCertSANs, extraCertSANs...)
-	return &kubeadm
+	hostsList = append(hostsList, lbHost)
+	hosts := strings.Join(hostsList, "\n")
+	return hosts
 }

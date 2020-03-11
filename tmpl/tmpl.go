@@ -79,10 +79,10 @@ func GenerateKubeadmFiles(cfg *cluster.ClusterCfg) {
 	dir := []string{"/etc/kubernetes"}
 	createDirectory(dir)
 	kubeadmCfg := cfg.GenerateKubeadmCfg()
-	kubeadmCfgFile := File{Name: "/etc/kubernetes/kubeadm-config.yaml", Pem: 0644, Tmpl: KubeadmCfgTempl}
+	kubeadmCfgFile := File{Name: "/tmp/kubeocean/kubeadm-config.yaml", Pem: 0644, Tmpl: KubeadmCfgTempl}
 
-	kubeletFiles := []File{kubeadmCfgFile}
-	for _, f := range kubeletFiles {
+	kubeFiles := []File{kubeadmCfgFile}
+	for _, f := range kubeFiles {
 		file, err := os.OpenFile(f.Name, os.O_CREATE|os.O_WRONLY|os.O_SYNC, f.Pem)
 		defer file.Close()
 		if err != nil {

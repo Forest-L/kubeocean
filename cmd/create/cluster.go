@@ -45,7 +45,6 @@ func createCluster(clusterCfgFile string, kubeadmCfgFile string) {
 		log.Info("Init a allinone cluster")
 		createAllinone()
 	}
-
 }
 
 func createAllinone() {
@@ -103,10 +102,10 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 	for _, host := range hosts {
 		install.InitOS(&host)
 		install.DockerInstall(&host)
-		//install.PullHyperKubeImage(&host, cfg.KubeImageRepo, cfg.KubeVersion)
 		install.GetKubeBinary(&host, cfg.KubeVersion)
 		install.SetKubeletService(&host, cfg.KubeImageRepo, cfg.KubeVersion)
 	}
+	install.InjectHosts(cfg)
 	install.SetUpEtcd(etcdNodes)
 	install.InitCluster(cfg, masterNodes)
 	install.AddWorkers(workerNodes)
