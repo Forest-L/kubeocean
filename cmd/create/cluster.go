@@ -3,6 +3,7 @@ package create
 import (
 	"fmt"
 	"github.com/pixiake/kubeocean/install"
+	"github.com/pixiake/kubeocean/scale"
 	"github.com/pixiake/kubeocean/tmpl"
 	"github.com/pixiake/kubeocean/util/cluster"
 	log "github.com/sirupsen/logrus"
@@ -98,7 +99,7 @@ func createAllinone() {
 
 func createMultiNodes(cfg *cluster.ClusterCfg) {
 	hosts := cfg.Hosts
-	etcdNodes, masterNodes, workerNodes := cfg.GroupHosts()
+	_, masterNodes, workerNodes := cfg.GroupHosts()
 	for _, host := range hosts {
 		install.InitOS(&host)
 		install.DockerInstall(&host)
@@ -106,7 +107,10 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 		install.SetKubeletService(&host, cfg.KubeImageRepo, cfg.KubeVersion)
 	}
 	install.InjectHosts(cfg)
-	install.SetUpEtcd(etcdNodes)
+	//install.SetUpEtcd(etcdNodes)
 	install.InitCluster(cfg, masterNodes)
-	install.AddWorkers(workerNodes)
+	if len(masterNodes.Hosts) > 1 {
+		scale.JoinMasters(masterNodes)
+	}
+	scale.JoinWorkers(workerNodes, masterNodes)
 }
