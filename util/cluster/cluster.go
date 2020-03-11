@@ -1,6 +1,8 @@
 package cluster
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
 	DefaultSSHPort        = "22"
@@ -45,14 +47,14 @@ type ClusterNodeCfg struct {
 	IsWorker bool
 }
 type NodeCfg struct {
-	HostName         string   `yaml:"hostName,omitempty" json:"hostName,omitempty" norman:"type=reference[node]"`
-	Address          string   `yaml:"address" json:"address,omitempty"`
-	Port             string   `yaml:"port" json:"port,omitempty"`
-	InternalAddress  string   `yaml:"internal_address" json:"internalAddress,omitempty"`
-	Role             []string `yaml:"role" json:"role,omitempty" norman:"type=array[enum],options=etcd|worker|worker"`
-	HostnameOverride string   `yaml:"hostname_override" json:"hostnameOverride,omitempty"`
-	User             string   `yaml:"user" json:"user,omitempty"`
-	Password         string   `yaml:"password" json:"password,omitempty"`
+	HostName        string   `yaml:"hostName,omitempty" json:"hostName,omitempty"`
+	Address         string   `yaml:"address" json:"address,omitempty"`
+	Port            string   `yaml:"port" json:"port,omitempty"`
+	InternalAddress string   `yaml:"internal_address" json:"internalAddress,omitempty"`
+	Role            []string `yaml:"role" json:"role,omitempty" norman:"type=array[enum],options=etcd|worker|worker"`
+	//HostnameOverride string   `yaml:"hostname_override" json:"hostnameOverride,omitempty"`
+	User     string `yaml:"user" json:"user,omitempty"`
+	Password string `yaml:"password" json:"password,omitempty"`
 	//SSHAgentAuth     bool              `yaml:"ssh_agent_auth,omitempty" json:"sshAgentAuth,omitempty"`
 	//SSHKey           string            `yaml:"ssh_key" json:"sshKey,omitempty" norman:"type=password"`
 	//SSHKeyPath       string            `yaml:"ssh_key_path" json:"sshKeyPath,omitempty"`
@@ -76,6 +78,10 @@ const (
 	TaintEffectNoExecute        TaintEffect = "NoExecute"
 )
 
+type NodeInfo struct {
+	HostName string
+}
+
 type NetworkConfig struct {
 	Plugin          string `yaml:"plugin" json:"plugin,omitempty"`
 	KubePodsCIDR    string `yaml:"kube_pods_cidr" json:"kube_pods_cidr,omitempty"`
@@ -95,6 +101,7 @@ type KubeadmCfg struct {
 	ServiceSubnet        string
 	ImageRepo            string
 	Version              string
+	CertSANs             []string
 }
 
 func (cfg *ClusterCfg) GroupHosts() (*EtcdNodes, *MasterNodes, *WorkerNodes) {
@@ -131,6 +138,9 @@ func (cfg *ClusterCfg) GroupHosts() (*EtcdNodes, *MasterNodes, *WorkerNodes) {
 
 func (cfg *ClusterCfg) GenerateKubeadmCfg() *KubeadmCfg {
 	kubeadm := KubeadmCfg{}
+	clusterSvc := fmt.Sprintf("kubernetes.default.svc.%s", kubeadm.ClusterName)
+	defaultCertSANs := []string{"kubernetes", "kubernetes.default", "kubernetes.default.svc", clusterSvc, "localhost", "127.0.0.1"}
+	extraCertSANs := []string{}
 	kubeadm.ClusterName = DefaultClusterName
 	kubeadm.PodSubnet = cfg.Network.KubePodsCIDR
 	kubeadm.ServiceSubnet = cfg.Network.KubeServiceCIDR
@@ -138,9 +148,23 @@ func (cfg *ClusterCfg) GenerateKubeadmCfg() *KubeadmCfg {
 	kubeadm.Version = cfg.KubeVersion
 	if cfg.LBKubeApiserver.Domain == "" {
 		kubeadm.controlPlaneEndpoint = fmt.Sprintf("%s:%s", DefaultLBDomain, DefaultLBPort)
+		extraCertSANs = append(extraCertSANs, DefaultLBDomain)
 	} else {
 		kubeadm.controlPlaneEndpoint = fmt.Sprintf("%s:%s", cfg.LBKubeApiserver.Domain, cfg.LBKubeApiserver.Port)
+		extraCertSANs = append(extraCertSANs, cfg.LBKubeApiserver.Domain)
+	}
+	if cfg.LBKubeApiserver.Address != "" {
+		kubeadm.controlPlaneEndpoint = fmt.Sprintf("%s:%s", DefaultLBDomain, DefaultLBPort)
+		extraCertSANs = append(extraCertSANs, cfg.LBKubeApiserver.Address)
+	}
+	if cfg.Hosts != nil {
+		for _, host := range cfg.Hosts {
+			if host.HostName != "" {
+				extraCertSANs = append(extraCertSANs, host.HostName)
+			}
+		}
 	}
 
+	kubeadm.CertSANs = append(defaultCertSANs, extraCertSANs...)
 	return &kubeadm
 }

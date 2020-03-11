@@ -208,7 +208,7 @@ func getHostConfig(reader *bufio.Reader, index int) (*cluster.NodeCfg, bool, err
 	if err != nil {
 		return nil, false, err
 	}
-	host.HostnameOverride = hostnameOverride
+	host.HostName = hostnameOverride
 
 	internalAddress, err := getConfig(reader, fmt.Sprintf("Internal IP of host (%s)", address), "")
 	if err != nil {
