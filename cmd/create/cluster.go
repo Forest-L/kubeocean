@@ -98,15 +98,12 @@ func createAllinone() {
 }
 
 func createMultiNodes(cfg *cluster.ClusterCfg) {
-	hosts := cfg.Hosts
 	_, masterNodes, workerNodes := cfg.GroupHosts()
+	install.InitOS(cfg)
 	install.InstallFilesDownload(cfg.KubeVersion)
-	for _, host := range hosts {
-		install.InitOS(&host)
-		install.DockerInstall(&host)
-		install.GetKubeBinary(&host, cfg.KubeVersion)
-		install.SetKubeletService(&host, cfg.KubeImageRepo, cfg.KubeVersion)
-	}
+	install.DockerInstall(cfg)
+	install.GetKubeBinary(cfg)
+	install.SetKubeletService(cfg)
 	install.InjectHosts(cfg)
 	//install.SetUpEtcd(etcdNodes)
 	install.InitCluster(cfg, masterNodes)

@@ -1,12 +1,4 @@
-package tmpl
-
-import (
-	"github.com/lithammer/dedent"
-	"text/template"
-)
-
-var BootStrapTmpl = template.Must(template.New("kubeletService").Parse(
-	dedent.Dedent(`#!/bin/sh
+#!/bin/sh
 
 swapoff -a
 sed -i /^[^#]*swap*/s/^/\#/g /etc/fstab
@@ -59,4 +51,3 @@ os_info=$(cat /etc/os-release)
 if [[ $os_info =~ "Ubuntu" || $os_info =~ "Debian" ]]; then
     sudo apt install -y iptables arptables ebtables > /dev/null
 fi
-   `)))

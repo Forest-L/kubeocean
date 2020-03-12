@@ -222,11 +222,17 @@ func getHostConfig(reader *bufio.Reader, index int) (*cluster.NodeCfg, bool, err
 func getNetworkConfig(reader *bufio.Reader) (*cluster.NetworkConfig, error) {
 	networkConfig := cluster.NetworkConfig{}
 
-	networkPlugin, err := getConfig(reader, "Network Plugin Type (calico, flannel)", cluster.DefaultNetworkPlugin)
+	networkPlugin, err := getConfig(reader, "Network Plugin Type (0: calico, 1: flannel)", "0")
 	if err != nil {
 		return nil, err
 	}
-	networkConfig.Plugin = networkPlugin
+	networkPluginInt, _ := strconv.Atoi(networkPlugin)
+	if networkPluginInt == 0 {
+		networkConfig.Plugin = "calico"
+	}
+	if networkPluginInt == 1 {
+		networkConfig.Plugin = "flannel"
+	}
 
 	podsCIDR, err := getConfig(reader, "Specify range of IP addresses for the pod network.", cluster.DefaultPodsCIDR)
 	if err != nil {
