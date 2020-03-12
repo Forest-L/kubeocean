@@ -3,8 +3,10 @@ package cluster
 import (
 	"fmt"
 	"github.com/pixiake/kubeocean/util"
+	"github.com/pixiake/kubeocean/util/ssh"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -226,4 +228,30 @@ func (cfg *ClusterCfg) GenerateHosts() string {
 	hostsList = append(hostsList, lbHost)
 	hosts := strings.Join(hostsList, "\n")
 	return hosts
+}
+
+func command_exists(cmd string) bool {
+	err := exec.Command("command", "-v", cmd, ">", "/dev/null", "2>&1").Run()
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func (host *NodeCfg) execCmd(cmd string) (string, error) {
+	sh_c := "sh -c"
+	if host.User != "root" {
+		if command_exists("sudo") {
+			sh_c = "sudo -E sh -c"
+		}
+		if command_exists("su") {
+			sh_c = "su -c"
+		}
+	}
+	cmdLine := fmt.Sprintf("%s %s", sh_c, cmd)
+	out, err := ssh.CmdExecOut(host.Address, host.User, host.Port, host.Password, false, cmdLine)
+	if err != nil {
+		return out, err
+	}
+	return out, nil
 }
