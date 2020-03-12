@@ -96,70 +96,61 @@ func GetKubeBinary(host *cluster.NodeCfg, version string) {
 	} else {
 		kubeVersion = version
 	}
-	kubeadmUrl := fmt.Sprintf("https://kubernetes-release.pek3b.qingstor.com/release/%s/bin/linux/amd64/kubeadm", kubeVersion)
-	kubeletUrl := fmt.Sprintf("https://kubernetes-release.pek3b.qingstor.com/release/%s/bin/linux/amd64/kubelet", kubeVersion)
-	kubectlUrl := fmt.Sprintf("https://kubernetes-release.pek3b.qingstor.com/release/%s/bin/linux/amd64/kubectl", kubeVersion)
-	kubeCniUrl := fmt.Sprintf("https://containernetworking.pek3b.qingstor.com/plugins/releases/download/%s/cni-plugins-linux-amd64-%s.tgz", "v0.8.1", "v0.8.1")
-	getKubeadmCmd := fmt.Sprintf("curl -o /tmp/kubeocean/kubeadm  %s", kubeadmUrl)
-	getKubeletCmd := fmt.Sprintf("curl -o /tmp/kubeocean/kubelet  %s", kubeletUrl)
-	getKubectlCmd := fmt.Sprintf("curl -o /tmp/kubeocean/kubectl  %s", kubectlUrl)
-	getKubeCniCmd := fmt.Sprintf("curl -o /tmp/kubeocean/cni-plugins-linux-amd64-v0.8.1.tgz  %s", kubeCniUrl)
+	kubeadmFile := fmt.Sprintf("kubeadm-%s", kubeVersion)
+	kubeletFile := fmt.Sprintf("kubelet-%s", kubeVersion)
+	kubectlFile := fmt.Sprintf("kubectl-%s", kubeVersion)
+	kubeCniFile := fmt.Sprintf("cni-plugins-linux-%s-%s.tgz", cluster.DefaultArch, "v0.8.1")
+	getKubeadmCmd := fmt.Sprintf("cp -f /tmp/kubeocean/%s /usr/local/bin/kubeadm", kubeadmFile)
+	getKubeletCmd := fmt.Sprintf("cp -f /tmp/kubeocean/%s /usr/local/bin/kubelet", kubeletFile)
+	getKubectlCmd := fmt.Sprintf("cp -f /tmp/kubeocean/%s /usr/local/bin/kubectl", kubectlFile)
+	getKubeCniCmd := fmt.Sprintf("tar -zxf /tmp/kubeocean/%s -C /opt/cni/bin", kubeCniFile)
+	sudoGetKubeadmCmd := fmt.Sprintf("sudo %s", getKubeadmCmd)
+	sudoGetKubeletCmd := fmt.Sprintf("sudo %s", getKubeletCmd)
+	sudoGetKubectlCmd := fmt.Sprintf("sudo %s", getKubectlCmd)
+	sudoGetKubeCniCmd := fmt.Sprintf("sudo %s", getKubeCniCmd)
 	if host == nil {
-		if err := exec.Command("/bin/sh", "-c", getKubeadmCmd).Run(); err != nil {
+		if err := exec.Command("sudo", getKubeadmCmd).Run(); err != nil {
 			log.Errorf("Failed to get kubeadm: %v", err)
 		}
-		exec.Command("/bin/sh", "-c", "cp /tmp/kubeocean/kubeadm /usr/local/bin/kubeadm").Run()
-		exec.Command("/bin/sh", "-c", "chmod +x /usr/local/bin/kubeadm").Run()
+		exec.Command("sudo", "chmod +x /usr/local/bin/kubeadm").Run()
 
-		if err := exec.Command("/bin/sh", "-c", getKubeletCmd).Run(); err != nil {
+		if err := exec.Command("sudo", getKubeletCmd).Run(); err != nil {
 			log.Errorf("Failed to get kubelet: %v", err)
 		}
-		exec.Command("/bin/sh", "-c", "cp /tmp/kubeocean/kubelet /usr/local/bin/kubelet").Run()
-		exec.Command("/bin/sh", "-c", "chmod +x /usr/local/bin/kubelet").Run()
-		exec.Command("/bin/sh", "-c", "ln -s /usr/local/bin/kubelet /usr/bin/kubelet").Run()
+		exec.Command("sudo", "chmod +x /usr/local/bin/kubelet").Run()
+		exec.Command("sudo", "ln -s /usr/local/bin/kubelet /usr/bin/kubelet").Run()
 
-		if err := exec.Command("/bin/sh", "-c", getKubectlCmd).Run(); err != nil {
+		if err := exec.Command("sudo", getKubectlCmd).Run(); err != nil {
 			log.Errorf("Failed to get kubectl: %v", err)
 		}
-		exec.Command("/bin/sh", "-c", "cp /tmp/kubeocean/kubectl /usr/local/bin/kubectl").Run()
-		exec.Command("/bin/sh", "-c", "chmod +x /usr/local/bin/kubectl").Run()
+		exec.Command("sudo", "chmod +x /usr/local/bin/kubectl").Run()
 
-		if err := exec.Command("/bin/sh", "-c", getKubeCniCmd).Run(); err != nil {
+		exec.Command("sudo", "mkdir -p /opt/cni/bin").Run()
+		if err := exec.Command("sudo", getKubeCniCmd).Run(); err != nil {
 			log.Errorf("Failed to get kubecni: %v", err)
 		}
-		exec.Command("/bin/sh", "-c", "cp /tmp/kubeocean/kubectl /usr/local/bin/kubectl").Run()
-		exec.Command("/bin/sh", "-c", "chmod +x /usr/local/bin/kubectl").Run()
 
-		if err := exec.Command("/bin/sh", "-c", getKubeCniCmd).Run(); err != nil {
-			log.Errorf("Failed to get kubecni: %v", err)
-		}
-		exec.Command("/bin/sh", "-c", "mkdir -p /opt/cni/bin").Run()
-		exec.Command("/bin/sh", "-c", "tar -zxf /tmp/kubeocean/cni-plugins-linux-amd64-v0.8.1.tgz -C /opt/cni/bin").Run()
 	} else {
-		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, getKubeadmCmd); err != nil {
+		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, sudoGetKubeadmCmd); err != nil {
 			log.Fatalf("Failed to get kubeadm (%s):\n", host.Address)
 		}
-		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "cp /tmp/kubeocean/kubeadm /usr/local/bin/kubeadm")
-		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "chmod +x /usr/local/bin/kubeadm")
+		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "sudo chmod +x /usr/local/bin/kubeadm")
 
-		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, getKubeletCmd); err != nil {
+		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, sudoGetKubeletCmd); err != nil {
 			log.Fatalf("Failed to get kubelet (%s):\n", host.Address)
 		}
-		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "cp /tmp/kubeocean/kubelet /usr/local/bin/kubelet")
-		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "chmod +x /usr/local/bin/kubelet")
-		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "ln -s /usr/local/bin/kubelet /usr/bin/kubelet")
+		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "sudo chmod +x /usr/local/bin/kubelet")
+		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "sudo ln -s /usr/local/bin/kubelet /usr/bin/kubelet")
 
-		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, getKubectlCmd); err != nil {
+		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, sudoGetKubectlCmd); err != nil {
 			log.Fatalf("Failed to get kubectl (%s):\n", host.Address)
 		}
-		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "cp /tmp/kubeocean/kubectl /usr/local/bin/kubectl")
-		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "chmod +x /usr/local/bin/kubectl")
+		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "sudo chmod +x /usr/local/bin/kubectl")
 
-		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, getKubeCniCmd); err != nil {
+		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "sudo mkdir -p /opt/cni/bin")
+		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, sudoGetKubeCniCmd); err != nil {
 			log.Fatalf("Failed to get kubecni (%s):\n", host.Address)
 		}
-		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "mkdir -p /opt/cni/bin")
-		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "tar -zxf /tmp/kubeocean/cni-plugins-linux-amd64-v0.8.1.tgz -C /opt/cni/bin")
 	}
 }
 

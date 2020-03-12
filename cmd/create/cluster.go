@@ -100,6 +100,7 @@ func createAllinone() {
 func createMultiNodes(cfg *cluster.ClusterCfg) {
 	hosts := cfg.Hosts
 	_, masterNodes, workerNodes := cfg.GroupHosts()
+	install.InstallFilesDownload(cfg.KubeVersion)
 	for _, host := range hosts {
 		install.InitOS(&host)
 		install.DockerInstall(&host)

@@ -19,6 +19,7 @@ const (
 	DefaultKubeVersion    = "v1.17.3"
 	DefaultKubeImageRepo  = "gcr.azk8s.cn"
 	DefaultClusterName    = "cluster.local"
+	DefaultArch           = "amd64"
 	ETCDRole              = "etcd"
 	MasterRole            = "master"
 	WorkerRole            = "worker"
