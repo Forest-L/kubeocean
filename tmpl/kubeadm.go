@@ -20,7 +20,7 @@ dns:
   imageTag: 1.6.0
 imageRepository: {{ .ImageRepo }}/google-containers
 kubernetesVersion: {{ .Version }}
-certificatesDir: /etc/kubernetes/ssl
+certificatesDir: /etc/kubernetes/pki
 clusterName: {{ .ClusterName }}
 controlPlaneEndpoint: {{ .ControlPlaneEndpoint }}
 networking:

@@ -178,10 +178,10 @@ func (cfg *ClusterCfg) GenerateCertSANs(clusterName string) []string {
 			if host.HostName != "" {
 				extraCertSANs = append(extraCertSANs, host.HostName)
 			}
-			if host.Address != "" {
+			if host.Address != "" && host.Address != cfg.LBKubeApiserver.Address {
 				extraCertSANs = append(extraCertSANs, host.Address)
 			}
-			if host.InternalAddress != "" && host.InternalAddress != host.Address {
+			if host.InternalAddress != "" && host.InternalAddress != host.Address && host.InternalAddress != cfg.LBKubeApiserver.Address {
 				extraCertSANs = append(extraCertSANs, host.InternalAddress)
 			}
 		}
