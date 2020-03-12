@@ -6,7 +6,7 @@ import (
 )
 
 var BootStrapTmpl = template.Must(template.New("kubeletService").Parse(
-	dedent.Dedent(`#!/bin/bash
+	dedent.Dedent(`#!/bin/sh
 
 swapoff -a
 sed -i /^[^#]*swap*/s/^/\#/g /etc/fstab

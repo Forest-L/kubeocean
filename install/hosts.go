@@ -74,15 +74,15 @@ func InitOS(host *cluster.NodeCfg) {
 	tmpl.GenerateBootStrapScript()
 	src := "/tmp/kubeocean/bootStrapScript.sh"
 	dst := "/tmp/kubeocean"
-	initOsCmd := fmt.Sprintf("/bin/bash %s", src)
+	//initOsCmd := fmt.Sprintf("/bin/bash %s", src)
 	if host == nil {
-		if err := exec.Command("/bin/bash", src).Run(); err != nil {
+		if err := exec.Command(src).Run(); err != nil {
 			log.Errorf("Bootstrap is Failed: %v", err)
 		}
 	} else {
 		ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, "mkdir -p /tmp/kubeocean")
 		ssh.PushFile(host.Address, src, dst, host.User, host.Port, host.Password, true)
-		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, initOsCmd); err != nil {
+		if err := ssh.CmdExec(host.Address, host.User, host.Port, host.Password, false, src); err != nil {
 			log.Fatalf("Bootstrap is Failed (%s):\n", host.Address)
 		}
 	}
