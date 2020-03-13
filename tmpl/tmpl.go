@@ -31,15 +31,14 @@ func GenerateBootStrapScript() {
 	BootStrapTmpl, _ := template.ParseFiles("bootstrap.sh")
 	bootStrapScript := fmt.Sprintf("%s/bootStrapScript.sh", tmpPath)
 	file, err := os.OpenFile(bootStrapScript, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0755)
+	if err != nil {
+		log.Errorf("%v", err)
+	}
+	err1 := BootStrapTmpl.Execute(file, "KubeOcean")
+	if err1 != nil {
+		log.Errorf("%v", err1)
+	}
 	defer file.Close()
-	if err != nil {
-		log.Errorf("%v", err)
-	}
-	err = BootStrapTmpl.Execute(file, "KubeOcean")
-	if err != nil {
-		log.Errorf("%v", err)
-	}
-
 }
 
 func createDirectory(directory []string) {
