@@ -36,7 +36,10 @@ func GenerateBootStrapScript() {
 		log.Errorf("%v", err)
 	}
 	kube := KubeContainer{}
-	BootStrapTmpl.Execute(file, kube)
+	err = BootStrapTmpl.Execute(file, kube)
+	if err != nil {
+		log.Errorf("%v", err)
+	}
 
 }
 
