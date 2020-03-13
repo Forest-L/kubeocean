@@ -40,6 +40,7 @@ func GenerateBootStrapScript() {
 	}
 	err1 := BootStrapTmpl.Execute(file, "KubeOcean")
 	if err1 != nil {
+		fmt.Println("test")
 		log.Errorf("%v", err1)
 	}
 
