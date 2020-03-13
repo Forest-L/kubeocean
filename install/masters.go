@@ -1,6 +1,7 @@
 package install
 
 import (
+	"fmt"
 	"github.com/pixiake/kubeocean/tmpl"
 	"github.com/pixiake/kubeocean/util/cluster"
 	"github.com/pixiake/kubeocean/util/ssh"
@@ -23,18 +24,29 @@ func InitCluster(cfg *cluster.ClusterCfg, masters *cluster.MasterNodes) {
 		for index, master := range masters.Hosts {
 			if index == 0 {
 				ssh.PushFile(master.Node.Address, "/tmp/kubeocean/kubeadm-config.yaml", "/etc/kubernetes", master.Node.User, master.Node.Port, master.Node.Password, true)
-				initClusterCmd := "sudo /usr/local/bin/kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml"
-				if err := ssh.CmdExec(master.Node.Address, master.Node.User, master.Node.Port, master.Node.Password, false, initClusterCmd); err != nil {
+				initClusterCmd := "/usr/local/bin/kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml"
+				if err := master.CmdExec(initClusterCmd); err != nil {
 					log.Fatalf("Failed to init cluster (%s):\n", master.Node.Address)
 				}
 
-				getKubeConfigCmd := "sudo mkdir -p /root/.kube && sudo cp -f /etc/kubernetes/admin.conf /root/.kube/config"
-				if err := ssh.CmdExec(master.Node.Address, master.Node.User, master.Node.Port, master.Node.Password, false, getKubeConfigCmd); err != nil {
+				createConfigDirCmd := "mkdir -p /root/.kube"
+				getKubeConfigCmd := "cp -f /etc/kubernetes/admin.conf /root/.kube/config"
+				if err := master.CmdExec(createConfigDirCmd); err != nil {
 					log.Fatalf("Failed to generate kubeconfig (%s):\n", master.Node.Address)
 				}
 
-				deployCalicoCmd := "sudo /usr/local/bin/kubectl apply -f https://docs.projectcalico.org/v3.8/manifests/calico.yaml"
-				if err := ssh.CmdExec(master.Node.Address, master.Node.User, master.Node.Port, master.Node.Password, false, deployCalicoCmd); err != nil {
+				if err := master.CmdExec(getKubeConfigCmd); err != nil {
+					log.Fatalf("Failed to generate kubeconfig (%s):\n", master.Node.Address)
+				}
+				tmpl.GenerateNetworkPluginFiles(cfg)
+				deployNetworkPluginCmd := fmt.Sprintf("/usr/local/bin/kubectl apply -f /etc/kubernetes/%s.yaml", cfg.Network.Plugin)
+				if cfg.Network.Plugin == "calico" {
+					ssh.PushFile(master.Node.Address, "/tmp/kubeocean/calico.yaml", "/etc/kubernetes", master.Node.User, master.Node.Port, master.Node.Password, true)
+				}
+				if cfg.Network.Plugin == "flannel" {
+					ssh.PushFile(master.Node.Address, "/tmp/kubeocean/flannelyaml", "/etc/kubernetes", master.Node.User, master.Node.Port, master.Node.Password, true)
+				}
+				if err := master.CmdExec(deployNetworkPluginCmd); err != nil {
 					log.Fatalf("Failed to deploy calico (%s):\n", master.Node.Address)
 				}
 			}

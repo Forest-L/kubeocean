@@ -54,11 +54,7 @@ func createDirectory(directory []string) {
 	}
 }
 
-func GenerateKubeletFiles(repo string, version string) {
-	kubeContainerInfo := KubeContainer{}
-	kubeContainerInfo.Repo = repo
-	kubeContainerInfo.Version = version
-
+func GenerateKubeletFiles() {
 	dir := []string{"/etc/systemd/system/kubelet.service.d"}
 	createDirectory(dir)
 	KubeletServiceTempl, _ := template.ParseFiles("kubelet.service")
@@ -73,7 +69,7 @@ func GenerateKubeletFiles(repo string, version string) {
 		if err != nil {
 			log.Errorf("%v", err)
 		}
-		f.Tmpl.Execute(file, kubeContainerInfo)
+		f.Tmpl.Execute(file, nil)
 	}
 }
 

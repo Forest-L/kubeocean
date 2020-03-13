@@ -1,7 +1,12 @@
 package ssh
 
-func CmdExec(host string, user string, port string, password string, force bool, cmd string) error {
+import "fmt"
+
+func CmdExec(host string, user string, port string, password string, force bool, privilegeCmd string, cmd string) error {
 	puser := NewUser(user, port, password, force)
+	if privilegeCmd != "" {
+		cmd = fmt.Sprintf("%s\"%s\"", privilegeCmd, cmd)
+	}
 	err := SingleRun(host, cmd, puser, force)
 	if err != nil {
 		return err
@@ -19,8 +24,11 @@ func SingleRun(host string, cmd string, user *CommonUser, force bool) error {
 	return nil
 }
 
-func CmdExecOut(host string, user string, port string, password string, force bool, cmd string) (string, error) {
+func CmdExecOut(host string, user string, port string, password string, force bool, privilegeCmd string, cmd string) (string, error) {
 	puser := NewUser(user, port, password, force)
+	if privilegeCmd != "" {
+		cmd = fmt.Sprintf("%s\"%s\"", privilegeCmd, cmd)
+	}
 	out, err := SingleRunOut(host, cmd, puser, force)
 	if err != nil {
 		return "", err
@@ -38,5 +46,4 @@ func SingleRunOut(host string, cmd string, user *CommonUser, force bool) (string
 	} else {
 		return r.Result, nil
 	}
-
 }

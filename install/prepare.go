@@ -22,19 +22,19 @@ func InstallFilesDownload(kubeVersion string) {
 	getKubeCniCmd := fmt.Sprintf("curl -o /tmp/kubeocean/cni-plugins-linux-amd64-v0.8.1.tgz  %s", kubeCniUrl)
 
 	log.Info("Kubeadm being download ...")
-	if err := exec.Command("sudo", "-E", "/bin/sh", "-c", getKubeadmCmd).Run(); err != nil {
+	if err := exec.Command("/bin/sh", "-c", getKubeadmCmd).Run(); err != nil {
 		log.Errorf("Failed to get kubeadm: %v", err)
 	}
 	log.Info("Kubelet being download ...")
-	if err := exec.Command("sudo", "-E", "/bin/sh", "-c", getKubeletCmd).Run(); err != nil {
+	if err := exec.Command("/bin/sh", "-c", getKubeletCmd).Run(); err != nil {
 		log.Errorf("Failed to get kubelet: %v", err)
 	}
 	log.Info("Kubectl being download ...")
-	if err := exec.Command("sudo", "-E", "/bin/sh", "-c", getKubectlCmd).Run(); err != nil {
+	if err := exec.Command("/bin/sh", "-c", getKubectlCmd).Run(); err != nil {
 		log.Errorf("Failed to get kubectl: %v", err)
 	}
 	log.Info("KubeCni being download ...")
-	if err := exec.Command("sudo", "-E", "/bin/sh", "-c", getKubeCniCmd).Run(); err != nil {
+	if err := exec.Command("/bin/sh", "-c", getKubeCniCmd).Run(); err != nil {
 		log.Errorf("Failed to get kubecni: %v", err)
 	}
 }

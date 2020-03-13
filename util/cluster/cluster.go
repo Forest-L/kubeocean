@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"errors"
 	"fmt"
 	"github.com/pixiake/kubeocean/util"
 	"github.com/pixiake/kubeocean/util/ssh"
@@ -36,6 +37,10 @@ type ClusterCfg struct {
 	Network         NetworkConfig      `yaml:"network" json:"network,omitempty"`
 }
 
+type AllNodes struct {
+	Hosts []ClusterNodeCfg
+}
+
 type EtcdNodes struct {
 	Hosts []ClusterNodeCfg
 }
@@ -48,10 +53,11 @@ type WorkerNodes struct {
 	Hosts []ClusterNodeCfg
 }
 type ClusterNodeCfg struct {
-	Node     NodeCfg
-	IsEtcd   bool
-	IsMaster bool
-	IsWorker bool
+	Node         NodeCfg
+	IsEtcd       bool
+	IsMaster     bool
+	IsWorker     bool
+	PrivilegeCmd string
 }
 type NodeCfg struct {
 	HostName        string   `yaml:"hostName,omitempty" json:"hostName,omitempty"`
@@ -67,8 +73,8 @@ type NodeCfg struct {
 	//SSHKeyPath       string            `yaml:"ssh_key_path" json:"sshKeyPath,omitempty"`
 	//SSHCert          string            `yaml:"ssh_cert" json:"sshCert,omitempty"`
 	//SSHCertPath      string            `yaml:"ssh_cert_path" json:"sshCertPath,omitempty"`
-	Labels map[string]string `yaml:"labels" json:"labels,omitempty"`
-	Taints []Taint           `yaml:"taints" json:"taints,omitempty"`
+	//Labels map[string]string `yaml:"labels" json:"labels,omitempty"`
+	//Taints []Taint           `yaml:"taints" json:"taints,omitempty"`
 }
 
 type Taint struct {
@@ -111,8 +117,9 @@ type KubeadmCfg struct {
 	CertSANs             []string
 }
 
-func (cfg *ClusterCfg) GroupHosts() (*EtcdNodes, *MasterNodes, *WorkerNodes) {
+func (cfg *ClusterCfg) GroupHosts() (*AllNodes, *EtcdNodes, *MasterNodes, *WorkerNodes) {
 	hosts := cfg.Hosts
+	allNodes := AllNodes{}
 	etcdNodes := EtcdNodes{}
 	masterNodes := MasterNodes{}
 	workerNodes := WorkerNodes{}
@@ -139,8 +146,15 @@ func (cfg *ClusterCfg) GroupHosts() (*EtcdNodes, *MasterNodes, *WorkerNodes) {
 		if clusterNode.IsWorker == true {
 			workerNodes.Hosts = append(workerNodes.Hosts, clusterNode)
 		}
+		execCmd, err := host.privilegeCmd()
+		if err != nil {
+			log.Fatal(err)
+			os.Exit(1)
+		}
+		clusterNode.PrivilegeCmd = execCmd
+		allNodes.Hosts = append(allNodes.Hosts, clusterNode)
 	}
-	return &etcdNodes, &masterNodes, &workerNodes
+	return &allNodes, &etcdNodes, &masterNodes, &workerNodes
 }
 
 func (cfg *ClusterCfg) GenerateKubeadmCfg() *KubeadmCfg {
@@ -201,7 +215,7 @@ func (cfg *ClusterCfg) GenerateHosts() string {
 	var lbHost string
 	hostsList := []string{}
 
-	_, masters, _ := cfg.GroupHosts()
+	_, _, masters, _ := cfg.GroupHosts()
 	if cfg.Hosts == nil {
 		localIp, err := util.GetLocalIP()
 		if err != nil {
@@ -238,20 +252,35 @@ func command_exists(cmd string) bool {
 	return true
 }
 
-func (host *NodeCfg) execCmd(cmd string) (string, error) {
-	sh_c := "sh -c"
+func (host *NodeCfg) privilegeCmd() (string, error) {
+	sh_c := "sh -c "
 	if host.User != "root" {
 		if command_exists("sudo") {
-			sh_c = "sudo -E sh -c"
+			sh_c = "sudo -E sh -c "
 		}
 		if command_exists("su") {
-			sh_c = "su -c"
+			sh_c = "su -c "
+		} else {
+			err := "Error: this installer needs the ability to run commands as root.\nWe are unable to find either \"sudo\" or \"su\" available to make this happen."
+			return "", errors.New(err)
 		}
 	}
-	cmdLine := fmt.Sprintf("%s %s", sh_c, cmd)
-	out, err := ssh.CmdExecOut(host.Address, host.User, host.Port, host.Password, false, cmdLine)
+
+	return sh_c, nil
+}
+
+func (host *ClusterNodeCfg) CmdExec(cmd string) error {
+	err := ssh.CmdExec(host.Node.Address, host.Node.User, host.Node.Port, host.Node.Password, false, host.PrivilegeCmd, cmd)
 	if err != nil {
-		return out, err
+		return err
+	}
+	return nil
+}
+
+func (host *ClusterNodeCfg) CmdExecOut(cmd string) (string, error) {
+	out, err := ssh.CmdExecOut(host.Node.Address, host.Node.User, host.Node.Port, host.Node.Password, false, host.PrivilegeCmd, cmd)
+	if err != nil {
+		return "", err
 	}
 	return out, nil
 }
