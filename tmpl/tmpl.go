@@ -28,7 +28,10 @@ func GenerateBootStrapScript() {
 			log.Errorf("%v", err)
 		}
 	}
-	BootStrapTmpl, _ := template.ParseFiles("bootstrap.sh")
+	BootStrapTmpl, e := template.ParseFiles("bootstrap.sh")
+	if e != nil {
+		log.Fatalf("%v", e)
+	}
 	bootStrapScript := fmt.Sprintf("%s/bootStrapScript.sh", tmpPath)
 	file, err := os.OpenFile(bootStrapScript, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0755)
 	if err != nil {
