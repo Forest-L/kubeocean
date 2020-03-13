@@ -76,7 +76,7 @@ func InitOS(nodes *cluster.AllNodes) {
 	src := "/tmp/kubeocean/bootStrapScript.sh"
 	dst := "/tmp/kubeocean"
 
-	if nodes == nil {
+	if nodes.Hosts == nil {
 		if err := exec.Command(src).Run(); err != nil {
 			log.Errorf("Bootstrap is Failed: %v", err)
 		}
@@ -172,7 +172,7 @@ func SetKubeletService(nodes *cluster.AllNodes) {
 }
 
 func OverrideHostname(nodes *cluster.AllNodes) {
-	if nodes == nil {
+	if nodes.Hosts == nil {
 		exec.Command("/bin/sh", "-c", fmt.Sprintf("hostnamectl set-hostname %s", cluster.DefaultHostName))
 	} else {
 		for _, node := range nodes.Hosts {
