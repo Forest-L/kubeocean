@@ -177,7 +177,7 @@ func (cfg *ClusterCfg) GenerateKubeadmCfg() *KubeadmCfg {
 		kubeadm.ImageRepo = cfg.KubeImageRepo
 	}
 	if cfg.KubeVersion == "" {
-		kubeadm.Version = DefaultKubeImageRepo
+		kubeadm.Version = DefaultKubeVersion
 	} else {
 		kubeadm.Version = cfg.KubeVersion
 	}
@@ -207,7 +207,14 @@ func (cfg *ClusterCfg) GenerateCertSANs(clusterName string) []string {
 	if cfg.LBKubeApiserver.Address != "" {
 		extraCertSANs = append(extraCertSANs, cfg.LBKubeApiserver.Address)
 	}
-	if cfg.Hosts != nil {
+	if cfg.Hosts == nil {
+		localIp, err := util.GetLocalIP()
+		if err != nil {
+			log.Fatal(err)
+			os.Exit(1)
+		}
+		extraCertSANs = append(extraCertSANs, localIp)
+	} else {
 		for _, host := range cfg.Hosts {
 			if host.HostName != "" {
 				extraCertSANs = append(extraCertSANs, host.HostName)
