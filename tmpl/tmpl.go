@@ -35,7 +35,8 @@ func GenerateBootStrapScript() {
 	if err != nil {
 		log.Errorf("%v", err)
 	}
-	BootStrapTmpl.Execute(file, "")
+	kube := KubeContainer{}
+	BootStrapTmpl.Execute(file, kube)
 
 }
 
@@ -48,7 +49,6 @@ func createDirectory(directory []string) {
 			err := os.MkdirAll(v, os.ModePerm)
 			if err != nil {
 				fmt.Println(err)
-				return
 			}
 		}
 	}
@@ -69,7 +69,8 @@ func GenerateKubeletFiles() {
 		if err != nil {
 			log.Errorf("%v", err)
 		}
-		f.Tmpl.Execute(file, "")
+		kube := KubeContainer{}
+		f.Tmpl.Execute(file, kube)
 	}
 }
 
