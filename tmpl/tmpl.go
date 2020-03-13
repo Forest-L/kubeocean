@@ -33,7 +33,7 @@ func GenerateBootStrapScript() {
 		log.Fatalf("%v", e)
 	}
 	bootStrapScript := fmt.Sprintf("%s/bootStrapScript.sh", tmpPath)
-	file, err := os.OpenFile(bootStrapScript, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0755)
+	file, err := os.OpenFile(bootStrapScript, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0777)
 	if err != nil {
 		log.Errorf("%v", err)
 	}
