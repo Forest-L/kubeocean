@@ -16,13 +16,13 @@ func InjectHosts(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 	removeDuplicatesCmd := "awk ' !x[$0]++{print > \"/etc/hosts\"}' /etc/hosts"
 	if nodes == nil {
 		if err := exec.Command("/bin/sh", "-c", injectHostsCmd).Run(); err != nil {
-			log.Fatal("Failed to Inject Hosts:\n")
+			log.Fatal("Failed to Inject Hosts:\n%v", err)
 		}
 		exec.Command("/bin/sh", "-c", removeDuplicatesCmd).Run()
 	} else {
 		for _, host := range nodes.Hosts {
 			if err := host.CmdExec(injectHostsCmd); err != nil {
-				log.Fatal("Failed to Inject Hosts:\n")
+				log.Fatal("Failed to Inject Hosts:\n%v", err)
 			}
 			host.CmdExec(removeDuplicatesCmd)
 		}
