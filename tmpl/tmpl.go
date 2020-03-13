@@ -28,7 +28,7 @@ func GenerateBootStrapScript() {
 			log.Errorf("%v", err)
 		}
 	}
-	BootStrapTmpl, _ := template.ParseFiles("bootstrap.sh")
+	BootStrapTmpl, _ := template.ParseFiles("tmpl/bootstrap.sh")
 	bootStrapScript := fmt.Sprintf("%s/bootStrapScript.sh", tmpPath)
 	file, err := os.OpenFile(bootStrapScript, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0755)
 	defer file.Close()
@@ -57,8 +57,8 @@ func createDirectory(directory []string) {
 func GenerateKubeletFiles() {
 	dir := []string{"/etc/systemd/system/kubelet.service.d"}
 	createDirectory(dir)
-	KubeletServiceTempl, _ := template.ParseFiles("kubelet.service")
-	KubeletEnvTempl, _ := template.ParseFiles("10-kubeadm.conf")
+	KubeletServiceTempl, _ := template.ParseFiles("tmpl/kubelet.service")
+	KubeletEnvTempl, _ := template.ParseFiles("tmpl/10-kubeadm.conf")
 	kubeletService := File{Name: "/etc/systemd/system/kubelet.service", Pem: 0644, Tmpl: KubeletServiceTempl}
 	kubeletEnv := File{Name: "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf", Pem: 0644, Tmpl: KubeletEnvTempl}
 
@@ -78,7 +78,7 @@ func GenerateKubeadmFiles(cfg *cluster.ClusterCfg) {
 	createDirectory(dir)
 	kubeadmCfg := cfg.GenerateKubeadmCfg()
 
-	KubeadmCfgTempl, _ := template.ParseFiles("kubeadm-config.yaml")
+	KubeadmCfgTempl, _ := template.ParseFiles("tmpl/kubeadm-config.yaml")
 	kubeadmCfgFile := File{Name: "/tmp/kubeocean/kubeadm-config.yaml", Pem: 0644, Tmpl: KubeadmCfgTempl}
 
 	kubeFiles := []File{kubeadmCfgFile}
@@ -96,12 +96,12 @@ func GenerateNetworkPluginFiles(cfg *cluster.ClusterCfg) {
 	var fileName string
 	var tmpl *template.Template
 	if cfg.Network.Plugin == "calico" || cfg.Network.Plugin == "" {
-		tmpl, _ = template.ParseFiles("calico.yaml")
+		tmpl, _ = template.ParseFiles("tmpl/calico.yaml")
 		fileName = "/tmp/kubeocean/calico.yaml"
 	}
 
 	if cfg.Network.Plugin == "flannel" {
-		tmpl, _ = template.ParseFiles("flannel.yaml")
+		tmpl, _ = template.ParseFiles("tmpl/flannel.yaml")
 		fileName = "/tmp/kubeocean/flannel.yaml"
 	}
 
