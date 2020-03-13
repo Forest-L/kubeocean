@@ -45,14 +45,15 @@ func createCluster(clusterCfgFile string) {
 func createAllinone(cfg *cluster.ClusterCfg) {
 	log.Info("BootStrap")
 	nodes := cluster.AllNodes{}
+	masters := cluster.MasterNodes{}
 	install.InitOS(&nodes)
 	install.OverrideHostname(&nodes)
 	install.InstallFilesDownload(cfg.KubeVersion)
-	install.DockerInstall(nil)
-	install.GetKubeBinary(cfg, nil)
-	install.SetKubeletService(nil)
-	install.InjectHosts(cfg, nil)
-	install.InitCluster(cfg, nil)
+	install.DockerInstall(&nodes)
+	install.GetKubeBinary(cfg, &nodes)
+	install.SetKubeletService(&nodes)
+	install.InjectHosts(cfg, &nodes)
+	install.InitCluster(cfg, &masters)
 
 }
 

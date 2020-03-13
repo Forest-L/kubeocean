@@ -14,7 +14,7 @@ func InjectHosts(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 	hosts := cfg.GenerateHosts()
 	injectHostsCmd := fmt.Sprintf("echo \"%s\"  >> /etc/hosts", hosts)
 	removeDuplicatesCmd := "awk ' !x[$0]++{print > \"/etc/hosts\"}' /etc/hosts"
-	if nodes == nil {
+	if nodes.Hosts == nil {
 		if err := exec.Command("/bin/sh", "-c", injectHostsCmd).Run(); err != nil {
 			log.Fatal("Failed to Inject Hosts:\n%v", err)
 		}
@@ -31,7 +31,7 @@ func InjectHosts(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 
 func DockerInstall(nodes *cluster.AllNodes) {
 	installDockerCmd := "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh"
-	if nodes == nil && CheckDocker(nil) == false {
+	if nodes.Hosts == nil && CheckDocker(nil) == false {
 		log.Infof("Docker being installed...")
 		if output, err := exec.Command("curl", "https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh").CombinedOutput(); err != nil {
 			log.Fatal("Install Docker Failed:\n")
@@ -108,7 +108,7 @@ func GetKubeBinary(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 	getKubectlCmd := fmt.Sprintf("cp -f /tmp/kubeocean/%s /usr/local/bin/kubectl", kubectlFile)
 	getKubeCniCmd := fmt.Sprintf("tar -zxf /tmp/kubeocean/%s -C /opt/cni/bin", kubeCniFile)
 
-	if nodes == nil {
+	if nodes.Hosts == nil {
 		if err := exec.Command("/bin/sh", "-c", getKubeadmCmd).Run(); err != nil {
 			log.Errorf("Failed to get kubeadm: %v", err)
 		}
