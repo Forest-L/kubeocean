@@ -28,12 +28,13 @@ func GenerateBootStrapScript() {
 			log.Errorf("%v", err)
 		}
 	}
-	BootStrapTmpl, e := template.ParseFiles("bootstrap.sh")
+	BootStrapTmpl, e := template.ParseFiles("bootStrapScript.sh")
 	if e != nil {
 		log.Fatalf("%v", e)
 	}
 	bootStrapScript := fmt.Sprintf("%s/bootStrapScript.sh", tmpPath)
-	file, err := os.OpenFile(bootStrapScript, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0777)
+	file, err := os.OpenFile(bootStrapScript, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0755)
+	defer file.Close()
 	if err != nil {
 		log.Errorf("%v", err)
 	}
@@ -41,7 +42,7 @@ func GenerateBootStrapScript() {
 	if err1 != nil {
 		log.Errorf("%v", err1)
 	}
-	defer file.Close()
+
 }
 
 func createDirectory(directory []string) {
