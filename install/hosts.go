@@ -72,7 +72,6 @@ func CheckDocker(host *cluster.ClusterNodeCfg) bool {
 }
 
 func InitOS(nodes *cluster.AllNodes) {
-	log.Info("BootStrap")
 	tmpl.GenerateBootStrapScript()
 	src := "/tmp/kubeocean/bootStrapScript.sh"
 	dst := "/tmp/kubeocean"
