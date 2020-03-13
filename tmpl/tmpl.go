@@ -104,6 +104,9 @@ func GenerateNetworkPluginFiles(cfg *cluster.ClusterCfg) {
 		fileName = "/tmp/kubeocean/flannel.yaml"
 	}
 
+	if cfg.Network.KubePodsCIDR == "" {
+		cfg.Network.KubePodsCIDR = cluster.DefaultPodsCIDR
+	}
 	networkPluginFile := File{Name: fileName, Pem: 0644, Tmpl: tmpl}
 
 	file, err := os.OpenFile(networkPluginFile.Name, os.O_CREATE|os.O_WRONLY|os.O_SYNC, networkPluginFile.Pem)
