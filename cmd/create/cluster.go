@@ -43,34 +43,50 @@ func createCluster(clusterCfgFile string) {
 }
 
 func createAllinone(cfg *cluster.ClusterCfg) {
-	log.Info("BootStrap")
 	nodes := cluster.AllNodes{}
 	masters := cluster.MasterNodes{}
+	log.Info("BootStrap")
 	install.InitOS(&nodes)
+	log.Info("Override Hostname")
 	install.OverrideHostname(&nodes)
+	log.Info("Install Files Download")
 	install.InstallFilesDownload(cfg.KubeVersion)
+	log.Info("Install Docker")
 	install.DockerInstall(&nodes)
+	log.Info("Get Kube Binary")
 	install.GetKubeBinary(cfg, &nodes)
+	log.Info("Set Kubelet Service")
 	install.SetKubeletService(&nodes)
+	log.Info("Inject Hosts")
 	install.InjectHosts(cfg, &nodes)
+	log.Info("Init Cluster")
 	install.InitCluster(cfg, &masters)
+	install.RemoveMasterTaint(&masters)
 
 }
 
 func createMultiNodes(cfg *cluster.ClusterCfg) {
 	allNodes, _, masterNodes, workerNodes := cfg.GroupHosts()
+	log.Info("BootStrap")
 	install.InitOS(allNodes)
+	log.Info("Override Hostname")
 	install.OverrideHostname(allNodes)
+	log.Info("Install Files Download")
 	install.InstallFilesDownload(cfg.KubeVersion)
+	log.Info("Install Docker")
 	install.DockerInstall(allNodes)
+	log.Info("Get Kube Binary")
 	install.GetKubeBinary(cfg, allNodes)
+	log.Info("Set Kubelet Service")
 	install.SetKubeletService(allNodes)
+	log.Info("Inject Hosts")
 	install.InjectHosts(cfg, allNodes)
-	//install.SetUpEtcd(etcdNodes)
+	log.Info("Init Cluster")
 	install.InitCluster(cfg, masterNodes)
 	install.RemoveMasterTaint(masterNodes)
 	if len(masterNodes.Hosts) > 1 {
 		scale.JoinMasters(masterNodes)
 	}
+	log.Info("Join Workers")
 	scale.JoinWorkers(workerNodes, masterNodes)
 }
