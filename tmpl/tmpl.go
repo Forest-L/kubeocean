@@ -35,7 +35,7 @@ func GenerateBootStrapScript() {
 	if err != nil {
 		log.Errorf("%v", err)
 	}
-	BootStrapTmpl.Execute(file, nil)
+	BootStrapTmpl.Execute(file, "")
 
 }
 
@@ -69,7 +69,7 @@ func GenerateKubeletFiles() {
 		if err != nil {
 			log.Errorf("%v", err)
 		}
-		f.Tmpl.Execute(file, nil)
+		f.Tmpl.Execute(file, "")
 	}
 }
 
