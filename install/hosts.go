@@ -32,7 +32,7 @@ func InjectHosts(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 func DockerInstall(nodes *cluster.AllNodes) {
 	installDockerCmd := "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh"
 	if nodes.Hosts == nil && CheckDocker(nil) == false {
-		log.Infof("Docker being installed...")
+		log.Infof("Docker being installed ...")
 		if output, err := exec.Command("/bin/sh", "-c", "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh").CombinedOutput(); err != nil {
 			log.Fatal("Install Docker Failed:\n")
 			fmt.Println(output)

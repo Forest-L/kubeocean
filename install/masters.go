@@ -15,7 +15,7 @@ func SetKubeadmCfg(cfg *cluster.ClusterCfg) {
 
 func InitCluster(cfg *cluster.ClusterCfg, masters *cluster.MasterNodes) {
 	SetKubeadmCfg(cfg)
-	if masters == nil {
+	if masters.Hosts == nil {
 		exec.Command("sh", "-c", "cp -f /tmp/kubeocean/kubeadm-config.yaml /etc/kubernetes").CombinedOutput()
 		if out, err := exec.Command("sh", "-c", "/usr/local/bin/kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml").CombinedOutput(); err != nil {
 			log.Fatalf("Failed to init cluster:\n %v", out)
@@ -76,7 +76,7 @@ func InitCluster(cfg *cluster.ClusterCfg, masters *cluster.MasterNodes) {
 
 func RemoveMasterTaint(masters *cluster.MasterNodes) {
 	var removeMasterTaint string
-	if masters == nil {
+	if masters.Hosts == nil {
 		removeMasterTaint = fmt.Sprintf("/usr/local/bin/kubectl taint nodes %s node-role.kubernetes.io/master=:NoSchedule-", cluster.DefaultHostName)
 		exec.Command("sh", "-c", removeMasterTaint).Run()
 	} else {

@@ -46,9 +46,7 @@ func GenerateBootStrapScript() {
 func createDirectory(directory []string) {
 	dirs := directory
 	for _, v := range dirs {
-		if util.IsExist(v) {
-			fmt.Printf("%s is exist!", v)
-		} else {
+		if util.IsExist(v) == false {
 			err := os.MkdirAll(v, os.ModePerm)
 			if err != nil {
 				fmt.Println(err)

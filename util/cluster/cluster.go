@@ -161,10 +161,27 @@ func (cfg *ClusterCfg) GroupHosts() (*AllNodes, *EtcdNodes, *MasterNodes, *Worke
 func (cfg *ClusterCfg) GenerateKubeadmCfg() *KubeadmCfg {
 	kubeadm := KubeadmCfg{}
 	kubeadm.ClusterName = DefaultClusterName
-	kubeadm.PodSubnet = cfg.Network.KubePodsCIDR
-	kubeadm.ServiceSubnet = cfg.Network.KubeServiceCIDR
-	kubeadm.ImageRepo = cfg.KubeImageRepo
-	kubeadm.Version = cfg.KubeVersion
+	if cfg.Network.KubePodsCIDR == "" {
+		kubeadm.PodSubnet = DefaultPodsCIDR
+	} else {
+		kubeadm.PodSubnet = cfg.Network.KubePodsCIDR
+	}
+	if cfg.Network.KubeServiceCIDR == "" {
+		kubeadm.ServiceSubnet = DefaultServiceCIDR
+	} else {
+		kubeadm.ServiceSubnet = cfg.Network.KubeServiceCIDR
+	}
+	if cfg.KubeImageRepo == "" {
+		kubeadm.ImageRepo = DefaultKubeImageRepo
+	} else {
+		kubeadm.ImageRepo = cfg.KubeImageRepo
+	}
+	if cfg.KubeVersion == "" {
+		kubeadm.Version = DefaultKubeImageRepo
+	} else {
+		kubeadm.Version = cfg.KubeVersion
+	}
+
 	if cfg.LBKubeApiserver.Domain == "" {
 		kubeadm.ControlPlaneEndpoint = fmt.Sprintf("%s:%s", DefaultLBDomain, DefaultLBPort)
 	} else {
