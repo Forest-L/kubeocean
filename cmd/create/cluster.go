@@ -1,14 +1,11 @@
 package create
 
 import (
-	"fmt"
 	"github.com/pixiake/kubeocean/install"
 	"github.com/pixiake/kubeocean/scale"
-	"github.com/pixiake/kubeocean/tmpl"
 	"github.com/pixiake/kubeocean/util/cluster"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os/exec"
 )
 
 func NewCmdCreateCluster() *cobra.Command {
@@ -20,7 +17,7 @@ func NewCmdCreateCluster() *cobra.Command {
 		Use:   "cluster",
 		Short: "Create cluster",
 		Run: func(cmd *cobra.Command, args []string) {
-			createCluster(clusterCfgFile, kubeadmCfgFile)
+			createCluster(clusterCfgFile)
 		},
 	}
 
@@ -29,12 +26,8 @@ func NewCmdCreateCluster() *cobra.Command {
 	return clusterCmd
 }
 
-func createCluster(clusterCfgFile string, kubeadmCfgFile string) {
-
+func createCluster(clusterCfgFile string) {
 	if clusterCfgFile != "" {
-		//dir, _ := os.Executable()
-		//exPath := filepath.Dir(dir)
-		//configFile := fmt.Sprintf("%s/%s", exPath, "cluster-info.yaml")
 		clusterInfo, err := cluster.ResolveClusterInfoFile(clusterCfgFile)
 		if err != nil {
 			log.Fatal(err)
@@ -43,63 +36,29 @@ func createCluster(clusterCfgFile string, kubeadmCfgFile string) {
 		log.Info("Welcome to KubeOcean")
 		createMultiNodes(clusterInfo)
 	} else {
-		log.Info("Init a allinone cluster")
-		createAllinone()
+		log.Info("Welcome to KubeOcean")
+		clusterInfo := cluster.ClusterCfg{}
+		createAllinone(&clusterInfo)
 	}
 }
 
-func createAllinone() {
-	clusterCfg := cluster.ClusterCfg{}
-	clusterCfg.KubeImageRepo = cluster.DefaultKubeImageRepo
-	clusterCfg.KubeVersion = cluster.DefaultKubeVersion
+func createAllinone(cfg *cluster.ClusterCfg) {
 	log.Info("BootStrap")
-	tmpl.GenerateBootStrapScript()
-	if err := exec.Command("/bin/bash", "/tmp/kubeocean/bootStrapScript.sh").Run(); err != nil {
-		log.Errorf("bootstrap is failed: %v", err)
-	}
-	log.Info("Pull Kube Image")
-	hyperKubeImagePull := fmt.Sprintf("docker pull %s/google-containers/hyperkube:%s", cluster.DefaultKubeImageRepo, cluster.DefaultKubeVersion)
-	fmt.Println(hyperKubeImagePull)
-	if err := exec.Command("/bin/sh", "-c", hyperKubeImagePull).Run(); err != nil {
-		log.Errorf("hyperkube image pull failed: %v", err)
-	}
-	log.Info("Download Kubeadm")
-	kubeadmDownLoad := fmt.Sprintf("curl -o /usr/local/bin/kubeadm https://kubernetes-release.pek3b.qingstor.com/release/%s/bin/linux/amd64/kubeadm", cluster.DefaultKubeVersion)
-	fmt.Println(kubeadmDownLoad)
-	if err := exec.Command("/bin/sh", "-c", kubeadmDownLoad).Run(); err != nil {
-		log.Fatalf("failed to initsystem cluster: %v", err)
-	}
-
-	if err := exec.Command("/bin/sh", "-c", "chmod +x /usr/local/bin/kubeadm").Run(); err != nil {
-		log.Fatalf("failed to initsystem cluster: %v", err)
-	}
-	log.Info("Generate Kubelet Config")
-	//tmpl.GenerateKubeletFiles(clusterCfg)
-	log.Info("Init Cluster")
-	if err := exec.Command("/usr/local/bin/kubeadm", "initsystem").Run(); err != nil {
-		log.Fatalf("failed to initsystem cluster: %v", err)
-	}
-	log.Info("Prepare Cluster")
-	cmdconfig := "mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config"
-	if err := exec.Command("/bin/sh", "-c", cmdconfig).Run(); err != nil {
-		log.Fatalf("failed to create config: %v", err)
-	}
-
-	cmdkubectl := "docker cp kubelet:/usr/local/bin/kubectl /usr/local/bin/kubectl"
-	if err := exec.Command("/bin/sh", "-c", cmdkubectl).Run(); err != nil {
-		log.Fatalf("failed to create config: %v", err)
-	}
-
-	cmdcalico := "kubectl apply -f https://docs.projectcalico.org/v3.8/manifests/calico.yaml"
-	if err := exec.Command("/bin/sh", "-c", cmdcalico).Run(); err != nil {
-		log.Fatalf("failed to create config: %v", err)
-	}
+	install.InitOS(nil)
+	install.OverrideHostname(nil)
+	install.InstallFilesDownload(cfg.KubeVersion)
+	install.DockerInstall(nil)
+	install.GetKubeBinary(cfg, nil)
+	install.SetKubeletService(nil)
+	install.InjectHosts(cfg, nil)
+	install.InitCluster(cfg, nil)
 
 }
 
 func createMultiNodes(cfg *cluster.ClusterCfg) {
 	allNodes, _, masterNodes, workerNodes := cfg.GroupHosts()
 	install.InitOS(allNodes)
+	install.OverrideHostname(allNodes)
 	install.InstallFilesDownload(cfg.KubeVersion)
 	install.DockerInstall(allNodes)
 	install.GetKubeBinary(cfg, allNodes)
@@ -107,6 +66,7 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 	install.InjectHosts(cfg, allNodes)
 	//install.SetUpEtcd(etcdNodes)
 	install.InitCluster(cfg, masterNodes)
+	install.RemoveMasterTaint(masterNodes)
 	if len(masterNodes.Hosts) > 1 {
 		scale.JoinMasters(masterNodes)
 	}

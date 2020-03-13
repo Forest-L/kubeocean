@@ -23,6 +23,7 @@ const (
 	DefaultKubeImageRepo  = "gcr.azk8s.cn"
 	DefaultClusterName    = "cluster.local"
 	DefaultArch           = "amd64"
+	DefaultHostName       = "allinone"
 	ETCDRole              = "etcd"
 	MasterRole            = "master"
 	WorkerRole            = "worker"

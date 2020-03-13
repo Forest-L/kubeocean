@@ -95,7 +95,7 @@ func GenerateKubeadmFiles(cfg *cluster.ClusterCfg) {
 func GenerateNetworkPluginFiles(cfg *cluster.ClusterCfg) {
 	var fileName string
 	var tmpl *template.Template
-	if cfg.Network.Plugin == "calico" {
+	if cfg.Network.Plugin == "calico" || cfg.Network.Plugin == "" {
 		tmpl, _ = template.ParseFiles("calico.yaml")
 		fileName = "/tmp/kubeocean/calico.yaml"
 	}

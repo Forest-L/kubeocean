@@ -14,7 +14,7 @@ func InjectHosts(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 	hosts := cfg.GenerateHosts()
 	injectHostsCmd := fmt.Sprintf("echo \"%s\"  >> /etc/hosts", hosts)
 	removeDuplicatesCmd := "awk ' !x[$0]++{print > \"/etc/hosts\"}' /etc/hosts"
-	if nodes.Hosts == nil {
+	if nodes == nil {
 		if err := exec.Command("/bin/sh", "-c", injectHostsCmd).Run(); err != nil {
 			log.Fatal("Failed to Inject Hosts:\n")
 		}
@@ -29,16 +29,16 @@ func InjectHosts(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 	}
 }
 
-func DockerInstall(hosts *cluster.AllNodes) {
+func DockerInstall(nodes *cluster.AllNodes) {
 	installDockerCmd := "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh"
-	if hosts.Hosts == nil && CheckDocker(nil) == false {
+	if nodes == nil && CheckDocker(nil) == false {
 		log.Infof("Docker being installed...")
 		if output, err := exec.Command("curl", "https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh").CombinedOutput(); err != nil {
 			log.Fatal("Install Docker Failed:\n")
 			fmt.Println(output)
 		}
 	} else {
-		for _, host := range hosts.Hosts {
+		for _, host := range nodes.Hosts {
 			if CheckDocker(&host) == false {
 				log.Infof("Docker being installed... (%s)", host.Node.Address)
 				out, err := ssh.CmdExecOut(host.Node.Address, host.Node.User, host.Node.Port, host.Node.Password, false, "", installDockerCmd)
@@ -109,7 +109,7 @@ func GetKubeBinary(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 	getKubectlCmd := fmt.Sprintf("cp -f /tmp/kubeocean/%s /usr/local/bin/kubectl", kubectlFile)
 	getKubeCniCmd := fmt.Sprintf("tar -zxf /tmp/kubeocean/%s -C /opt/cni/bin", kubeCniFile)
 
-	if nodes.Hosts == nil {
+	if nodes == nil {
 		if err := exec.Command("/bin/sh", "-c", getKubeadmCmd).Run(); err != nil {
 			log.Errorf("Failed to get kubeadm: %v", err)
 		}
@@ -168,6 +168,16 @@ func SetKubeletService(nodes *cluster.AllNodes) {
 			host.CmdExec("mkdir -p /etc/systemd/system/kubelet.service.d")
 			ssh.PushFile(host.Node.Address, "/etc/systemd/system/kubelet.service", "/etc/systemd/system", host.Node.User, host.Node.Port, host.Node.Password, true)
 			ssh.PushFile(host.Node.Address, "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf", "/etc/systemd/system/kubelet.service.d", host.Node.User, host.Node.Port, host.Node.Password, true)
+		}
+	}
+}
+
+func OverrideHostname(nodes *cluster.AllNodes) {
+	if nodes == nil {
+		exec.Command("/bin/sh", "-c", fmt.Sprintf("hostnamectl set-hostname %s", cluster.DefaultHostName))
+	} else {
+		for _, node := range nodes.Hosts {
+			node.CmdExec(fmt.Sprintf("hostnamectl set-hostname %s", node.Node.HostName))
 		}
 	}
 }
