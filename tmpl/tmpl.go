@@ -20,6 +20,15 @@ type File struct {
 	Tmpl *template.Template
 }
 
+func getBaseDir() string {
+	baseDir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+	return baseDir
+}
+
 func GenerateBootStrapScript() {
 	tmpPath := "/tmp/kubeocean"
 	if util.IsExist(tmpPath) == false {
@@ -28,11 +37,8 @@ func GenerateBootStrapScript() {
 			log.Errorf("%v", err)
 		}
 	}
-	wd, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	BootStrapTmpl, e := template.ParseFiles(fmt.Sprintf("%s/tmpl/bootStrapScript.sh", wd))
+
+	BootStrapTmpl, e := template.ParseFiles(fmt.Sprintf("%s/tmpl/bootStrapScript.sh", getBaseDir()))
 	if e != nil {
 		log.Fatalf("%v", e)
 	}
@@ -67,8 +73,9 @@ func createDirectory(directory []string) {
 func GenerateKubeletFiles() {
 	dir := []string{"/etc/systemd/system/kubelet.service.d"}
 	createDirectory(dir)
-	KubeletServiceTempl, _ := template.ParseFiles("kubelet.service")
-	KubeletEnvTempl, _ := template.ParseFiles("10-kubeadm.conf")
+
+	KubeletServiceTempl, _ := template.ParseFiles(fmt.Sprintf("%s/tmpl/kubelet.service", getBaseDir()))
+	KubeletEnvTempl, _ := template.ParseFiles(fmt.Sprintf("%s/tmpl/10-kubeadm.conf", getBaseDir()))
 	kubeletService := File{Name: "/etc/systemd/system/kubelet.service", Pem: 0644, Tmpl: KubeletServiceTempl}
 	kubeletEnv := File{Name: "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf", Pem: 0644, Tmpl: KubeletEnvTempl}
 
@@ -89,7 +96,7 @@ func GenerateKubeadmFiles(cfg *cluster.ClusterCfg) {
 	createDirectory(dir)
 	kubeadmCfg := cfg.GenerateKubeadmCfg()
 
-	KubeadmCfgTempl, _ := template.ParseFiles("kubeadm-config.yaml")
+	KubeadmCfgTempl, _ := template.ParseFiles(fmt.Sprintf("%s/tmpl/kubeadm-config.yaml", getBaseDir()))
 	kubeadmCfgFile := File{Name: "/tmp/kubeocean/kubeadm-config.yaml", Pem: 0644, Tmpl: KubeadmCfgTempl}
 
 	kubeFiles := []File{kubeadmCfgFile}
@@ -107,12 +114,12 @@ func GenerateNetworkPluginFiles(cfg *cluster.ClusterCfg) {
 	var fileName string
 	var tmpl *template.Template
 	if cfg.Network.Plugin == "calico" || cfg.Network.Plugin == "" {
-		tmpl, _ = template.ParseFiles("calico.yaml")
+		tmpl, _ = template.ParseFiles(fmt.Sprintf("%s/tmpl/calico.yaml", getBaseDir()))
 		fileName = "/tmp/kubeocean/calico.yaml"
 	}
 
 	if cfg.Network.Plugin == "flannel" {
-		tmpl, _ = template.ParseFiles("flannel.yaml")
+		tmpl, _ = template.ParseFiles(fmt.Sprintf("%s/tmpl/flannel.yaml", getBaseDir()))
 		fileName = "/tmp/kubeocean/flannel.yaml"
 	}
 
