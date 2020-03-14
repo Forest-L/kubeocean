@@ -59,7 +59,7 @@ sed -i ':a;$!{N;ba};s@# kubeocean hosts BEGIN.*# kubeocean hosts END@@' /etc/hos
 
 cat >>/etc/hosts<<EOF
 # kubeocean hosts BEGIN
-{{- range hostsList }}
+{{- range . }}
 {{ . }}
 {{- end }}
 # kubeocean hosts END
