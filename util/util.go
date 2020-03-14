@@ -170,10 +170,3 @@ func GetLocalIP() (string, error) {
 	}
 	return "", errors.New("valid local IP not found !")
 }
-
-func blockInFile(marker string, block string, path string) string {
-	var blockInFileCmd string
-	blockInFileCmd = fmt.Sprintf("if[grep -c \"%s\" %s];then sed -i ':a;$!{N;ba};s@# %s BEGIN.*# %s END@# %s BEGIN\n%s\n# %s END/' %s", marker, path)
-
-	return blockInFileCmd
-}
