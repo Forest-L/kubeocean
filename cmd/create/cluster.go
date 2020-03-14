@@ -79,7 +79,6 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 	install.SetKubeletService(allNodes)
 	log.Info("Init Cluster")
 	install.InitCluster(cfg, masterNodes)
-	install.RemoveMastersTaint(masterNodes)
 
 	if len(k8sNodes.Hosts) > 1 {
 		joinMasterCmd, joinWorkerCmd := scale.GetJoinCmd(&masterNodes.Hosts[0])
@@ -88,6 +87,7 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 				scale.JoinMaster(&master, joinMasterCmd)
 			}
 		}
+		install.RemoveMastersTaint(masterNodes)
 		for _, worker := range workerNodes.Hosts {
 			if worker.IsMaster != true {
 				scale.JoinWorker(&worker, joinWorkerCmd)
