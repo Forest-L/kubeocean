@@ -69,7 +69,7 @@ func NewNodes(clusterStatusInfo string, nodes *cluster.AllNodes) []cluster.Clust
 	fmt.Sprintf(clusterStatusInfo)
 	newNodes := []cluster.ClusterNodeCfg{}
 	for _, node := range nodes.Hosts {
-		if strings.Contains(node.Node.HostName, clusterStatusInfo) == false && strings.Contains(node.Node.InternalAddress, clusterStatusInfo) == false && (node.IsMaster || node.IsWorker) {
+		if strings.Contains(clusterStatusInfo, node.Node.HostName) == false && strings.Contains(clusterStatusInfo, node.Node.InternalAddress) == false && (node.IsMaster || node.IsWorker) {
 			newNodes = append(newNodes, node)
 		}
 	}
