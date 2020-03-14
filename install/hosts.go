@@ -175,7 +175,7 @@ func SetKubeletService(nodes *cluster.AllNodes) {
 
 func OverrideHostname(nodes *cluster.AllNodes) {
 	if nodes.Hosts == nil {
-		err := exec.Command("/bin/sh", "-c", fmt.Sprintf("\"hostnamectl set-hostname %s\"", cluster.DefaultHostName))
+		err := exec.Command("hostnamectl", "set-hostname", cluster.DefaultHostName)
 		if err != nil {
 			log.Fatalf("Failed to Override Hostname: %v", err)
 		}
