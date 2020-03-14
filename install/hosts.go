@@ -18,7 +18,9 @@ func InjectHosts(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 		if err := exec.Command("/bin/sh", "-c", injectHostsCmd).Run(); err != nil {
 			log.Fatal("Failed to Inject Hosts:\n%v", err)
 		}
-		exec.Command("/bin/sh", "-c", removeDuplicatesCmd).Run()
+		if err1 := exec.Command("/bin/sh", "-c", removeDuplicatesCmd).Run(); err1 != nil {
+			log.Fatalf("Failed to Inject Hosts:\n%v", err1)
+		}
 	} else {
 		for _, host := range nodes.Hosts {
 			if err := host.CmdExec(injectHostsCmd); err != nil {
@@ -173,7 +175,10 @@ func SetKubeletService(nodes *cluster.AllNodes) {
 
 func OverrideHostname(nodes *cluster.AllNodes) {
 	if nodes.Hosts == nil {
-		exec.Command("/bin/sh", "-c", fmt.Sprintf("hostnamectl set-hostname %s", cluster.DefaultHostName))
+		err := exec.Command("/bin/sh", "-c", fmt.Sprintf("hostnamectl set-hostname %s", cluster.DefaultHostName))
+		if err != nil {
+			log.Fatalf("Failed to Override Hostname: %v", err)
+		}
 	} else {
 		for _, node := range nodes.Hosts {
 			node.CmdExec(fmt.Sprintf("hostnamectl set-hostname %s", node.Node.HostName))

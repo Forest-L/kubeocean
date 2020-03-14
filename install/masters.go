@@ -78,7 +78,10 @@ func RemoveMasterTaint(masters *cluster.MasterNodes) {
 	var removeMasterTaint string
 	if masters.Hosts == nil {
 		removeMasterTaint = fmt.Sprintf("/usr/local/bin/kubectl taint nodes %s node-role.kubernetes.io/master=:NoSchedule-", cluster.DefaultHostName)
-		exec.Command("sh", "-c", removeMasterTaint).Run()
+		err := exec.Command("sh", "-c", removeMasterTaint).Run()
+		if err != nil {
+			log.Fatalf("Failed to Remove Master Taint: %v", err)
+		}
 	} else {
 		for _, master := range masters.Hosts {
 			if master.IsWorker == true {
