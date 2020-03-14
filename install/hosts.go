@@ -73,7 +73,17 @@ func InitOS(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 }
 
 func GetKubeBinary(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
+	allinone := cluster.ClusterNodeCfg{}
+	if nodes.Hosts == nil {
+		KubeBinary(cfg, &allinone)
+	} else {
+		for _, node := range nodes.Hosts {
+			KubeBinary(cfg, &node)
+		}
+	}
+}
 
+func KubeBinary(cfg *cluster.ClusterCfg, node *cluster.ClusterNodeCfg) {
 	var kubeVersion string
 	if cfg.KubeVersion == "" {
 		kubeVersion = cluster.DefaultKubeVersion
@@ -89,7 +99,7 @@ func GetKubeBinary(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 	getKubectlCmd := fmt.Sprintf("cp -f /tmp/kubeocean/%s /usr/local/bin/kubectl", kubectlFile)
 	getKubeCniCmd := fmt.Sprintf("tar -zxf /tmp/kubeocean/%s -C /opt/cni/bin", kubeCniFile)
 
-	if nodes.Hosts == nil {
+	if node.Node.InternalAddress == "" {
 		if err := exec.Command("/bin/sh", "-c", getKubeadmCmd).Run(); err != nil {
 			log.Errorf("Failed to get kubeadm: %v", err)
 		}
@@ -112,31 +122,29 @@ func GetKubeBinary(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 		}
 
 	} else {
-		for _, host := range nodes.Hosts {
-			ssh.PushFile(host.Node.Address, fmt.Sprintf("/tmp/kubeocean/%s", kubeadmFile), "/tmp/kubeocean", host.Node.User, host.Node.Port, host.Node.Password, true)
-			if err := host.CmdExec(getKubeadmCmd); err != nil {
-				log.Fatalf("Failed to get kubeadm (%s):\n", host.Node.Address)
-			}
-			host.CmdExec("chmod +x /usr/local/bin/kubeadm")
+		ssh.PushFile(node.Node.Address, fmt.Sprintf("/tmp/kubeocean/%s", kubeadmFile), "/tmp/kubeocean", node.Node.User, node.Node.Port, node.Node.Password, true)
+		if err := node.CmdExec(getKubeadmCmd); err != nil {
+			log.Fatalf("Failed to get kubeadm (%s):\n", node.Node.Address)
+		}
+		node.CmdExec("chmod +x /usr/local/bin/kubeadm")
 
-			ssh.PushFile(host.Node.Address, fmt.Sprintf("/tmp/kubeocean/%s", kubeletFile), "/tmp/kubeocean", host.Node.User, host.Node.Port, host.Node.Password, true)
-			if err := host.CmdExec(getKubeletCmd); err != nil {
-				log.Fatalf("Failed to get kubelet (%s):\n", host.Node.Address)
-			}
-			host.CmdExec("chmod +x /usr/local/bin/kubelet")
-			host.CmdExec("ln -s /usr/local/bin/kubelet /usr/bin/kubelet")
+		ssh.PushFile(node.Node.Address, fmt.Sprintf("/tmp/kubeocean/%s", kubeletFile), "/tmp/kubeocean", node.Node.User, node.Node.Port, node.Node.Password, true)
+		if err := node.CmdExec(getKubeletCmd); err != nil {
+			log.Fatalf("Failed to get kubelet (%s):\n", node.Node.Address)
+		}
+		node.CmdExec("chmod +x /usr/local/bin/kubelet")
+		node.CmdExec("ln -s /usr/local/bin/kubelet /usr/bin/kubelet")
 
-			ssh.PushFile(host.Node.Address, fmt.Sprintf("/tmp/kubeocean/%s", kubectlFile), "/tmp/kubeocean", host.Node.User, host.Node.Port, host.Node.Password, true)
-			if err := host.CmdExec(getKubectlCmd); err != nil {
-				log.Fatalf("Failed to get kubectl (%s):\n", host.Node.Address)
-			}
-			host.CmdExec("chmod +x /usr/local/bin/kubectl")
+		ssh.PushFile(node.Node.Address, fmt.Sprintf("/tmp/kubeocean/%s", kubectlFile), "/tmp/kubeocean", node.Node.User, node.Node.Port, node.Node.Password, true)
+		if err := node.CmdExec(getKubectlCmd); err != nil {
+			log.Fatalf("Failed to get kubectl (%s):\n", node.Node.Address)
+		}
+		node.CmdExec("chmod +x /usr/local/bin/kubectl")
 
-			ssh.PushFile(host.Node.Address, fmt.Sprintf("/tmp/kubeocean/%s", kubeCniFile), "/tmp/kubeocean", host.Node.User, host.Node.Port, host.Node.Password, true)
-			host.CmdExec("mkdir -p /opt/cni/bin")
-			if err := host.CmdExec(getKubeCniCmd); err != nil {
-				log.Fatalf("Failed to get kubecni (%s):\n", host.Node.Address)
-			}
+		ssh.PushFile(node.Node.Address, fmt.Sprintf("/tmp/kubeocean/%s", kubeCniFile), "/tmp/kubeocean", node.Node.User, node.Node.Port, node.Node.Password, true)
+		node.CmdExec("mkdir -p /opt/cni/bin")
+		if err := node.CmdExec(getKubeCniCmd); err != nil {
+			log.Fatalf("Failed to get kubecni (%s):\n", node.Node.Address)
 		}
 	}
 }

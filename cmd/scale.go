@@ -34,7 +34,19 @@ func scaleCluster(clusterCfgFile string) {
 	allNodes, _, masterNodes, _, _ := cfg.GroupHosts()
 
 	clusterStatusInfo, joinMasterCmd, joinWorkerCmd := getClusterStatusInfo(masterNodes)
+	log.Info("BootStrap")
+	install.InitOS(cfg, allNodes)
+	log.Info("Override Hostname")
+	install.OverrideHostname(allNodes)
+	log.Info("Install Files Download")
+	install.InstallFilesDownload(cfg.KubeVersion)
+	log.Info("Install Docker")
+	install.DockerInstall(allNodes)
 	for _, node := range NewNodes(clusterStatusInfo, allNodes) {
+		log.Info("Get Kube Binary")
+		install.KubeBinary(cfg, &node)
+		log.Info("Set Kubelet Service")
+		install.SetKubeletService(allNodes)
 		if node.IsMaster {
 			scale.JoinMaster(&node, joinMasterCmd)
 			if node.IsWorker {
