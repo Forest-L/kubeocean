@@ -52,6 +52,11 @@ type MasterNodes struct {
 type WorkerNodes struct {
 	Hosts []ClusterNodeCfg
 }
+
+type K8sNodes struct {
+	Hosts []ClusterNodeCfg
+}
+
 type ClusterNodeCfg struct {
 	Node         NodeCfg
 	IsEtcd       bool
@@ -117,12 +122,13 @@ type KubeadmCfg struct {
 	CertSANs             []string
 }
 
-func (cfg *ClusterCfg) GroupHosts() (*AllNodes, *EtcdNodes, *MasterNodes, *WorkerNodes) {
+func (cfg *ClusterCfg) GroupHosts() (*AllNodes, *EtcdNodes, *MasterNodes, *WorkerNodes, *K8sNodes) {
 	hosts := cfg.Hosts
 	allNodes := AllNodes{}
 	etcdNodes := EtcdNodes{}
 	masterNodes := MasterNodes{}
 	workerNodes := WorkerNodes{}
+	k8sNodes := K8sNodes{}
 
 	for _, host := range hosts {
 		clusterNode := ClusterNodeCfg{Node: host}
@@ -146,6 +152,9 @@ func (cfg *ClusterCfg) GroupHosts() (*AllNodes, *EtcdNodes, *MasterNodes, *Worke
 		if clusterNode.IsWorker == true {
 			workerNodes.Hosts = append(workerNodes.Hosts, clusterNode)
 		}
+		if clusterNode.IsMaster == true || clusterNode.IsWorker == true {
+			k8sNodes.Hosts = append(k8sNodes.Hosts, clusterNode)
+		}
 		execCmd, err := host.privilegeCmd()
 		if err != nil {
 			log.Fatal(err)
@@ -154,7 +163,7 @@ func (cfg *ClusterCfg) GroupHosts() (*AllNodes, *EtcdNodes, *MasterNodes, *Worke
 		clusterNode.PrivilegeCmd = execCmd
 		allNodes.Hosts = append(allNodes.Hosts, clusterNode)
 	}
-	return &allNodes, &etcdNodes, &masterNodes, &workerNodes
+	return &allNodes, &etcdNodes, &masterNodes, &workerNodes, &k8sNodes
 }
 
 func (cfg *ClusterCfg) GenerateKubeadmCfg() *KubeadmCfg {
@@ -239,7 +248,7 @@ func (cfg *ClusterCfg) GenerateHosts() []string {
 	var lbHost string
 	hostsList := []string{}
 
-	_, _, masters, _ := cfg.GroupHosts()
+	_, _, masters, _, _ := cfg.GroupHosts()
 	if cfg.Hosts == nil {
 		localIp, err := util.GetLocalIP()
 		if err != nil {

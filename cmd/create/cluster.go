@@ -59,12 +59,12 @@ func createAllinone(cfg *cluster.ClusterCfg) {
 	install.SetKubeletService(&nodes)
 	log.Info("Init Cluster")
 	install.InitCluster(cfg, &masters)
-	install.RemoveMasterTaint(&masters)
+	install.RemoveMastersTaint(&masters)
 
 }
 
 func createMultiNodes(cfg *cluster.ClusterCfg) {
-	allNodes, _, masterNodes, workerNodes := cfg.GroupHosts()
+	allNodes, _, masterNodes, workerNodes, k8sNodes := cfg.GroupHosts()
 	log.Info("BootStrap")
 	install.InitOS(cfg, allNodes)
 	log.Info("Override Hostname")
@@ -79,10 +79,19 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 	install.SetKubeletService(allNodes)
 	log.Info("Init Cluster")
 	install.InitCluster(cfg, masterNodes)
-	install.RemoveMasterTaint(masterNodes)
-	if len(masterNodes.Hosts) > 1 {
-		scale.JoinMasters(masterNodes)
+	install.RemoveMastersTaint(masterNodes)
+
+	if len(k8sNodes.Hosts) > 1 {
+		joinMasterCmd, joinWorkerCmd := scale.GetJoinCmd(&masterNodes.Hosts[0])
+		for index, master := range masterNodes.Hosts {
+			if index != 0 {
+				scale.JoinMaster(&master, joinMasterCmd)
+			}
+		}
+		for _, worker := range workerNodes.Hosts {
+			if worker.IsMaster != true {
+				scale.JoinWorker(&worker, joinWorkerCmd)
+			}
+		}
 	}
-	log.Info("Join Workers")
-	scale.JoinWorkers(workerNodes, masterNodes)
 }

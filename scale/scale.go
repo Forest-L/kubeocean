@@ -8,9 +8,10 @@ import (
 	"strings"
 )
 
-func JoinMasterCmd(masters *cluster.MasterNodes) string {
-	var joinMasterCmd string
-	master := masters.Hosts[0]
+func GetJoinCmd(master *cluster.ClusterNodeCfg) (string, string) {
+	var joinMasterCmd, joinWorkerCmd string
+
+	// Get Join Master Command
 	uploadCertsCmd := "/usr/local/bin/kubeadm init phase upload-certs --upload-certs"
 	out, err := master.CmdExecOut(uploadCertsCmd)
 	if err != nil {
@@ -20,16 +21,28 @@ func JoinMasterCmd(masters *cluster.MasterNodes) string {
 	outList := strings.Split(out, "Using certificate key:\n")
 	certificateKeyStr := strings.Split(outList[1], "\n")
 	CertificateKey := certificateKeyStr[0]
-	tokenCreateCmd := fmt.Sprintf("/usr/local/bin/kubeadm token create --print-join-command --certificate-key %s", CertificateKey)
-	out, err1 := master.CmdExecOut(tokenCreateCmd)
-	if err1 != nil {
+	tokenCreateMasterCmd := fmt.Sprintf("/usr/local/bin/kubeadm token create --print-join-command --certificate-key %s", CertificateKey)
+	outMasterCmd, errMaster := master.CmdExecOut(tokenCreateMasterCmd)
+	if errMaster != nil {
 		log.Fatalf("Failed to create token (%s):\n", master.Node.Address)
 		os.Exit(1)
 	}
-	joinStrList := strings.Split(out, "kubeadm join")
-	joinStr := strings.Split(joinStrList[1], "\n")
-	joinMasterCmd = fmt.Sprintf("/usr/local/bin/kubeadm join %s", joinStr[0])
-	return joinMasterCmd
+	joinMasterStrList := strings.Split(outMasterCmd, "kubeadm join")
+	joinMasterStr := strings.Split(joinMasterStrList[1], "\n")
+	joinMasterCmd = fmt.Sprintf("/usr/local/bin/kubeadm join %s", joinMasterStr[0])
+
+	// Get Join Worker Command
+	tokenCreateWorkerCmd := "/usr/local/bin/kubeadm token create --print-join-command"
+	outWorkerCmd, errWorker := master.CmdExecOut(tokenCreateWorkerCmd)
+	if errWorker != nil {
+		log.Fatalf("Failed to create token (%s):\n", master.Node.Address)
+		os.Exit(1)
+	}
+	joinWorkerStrList := strings.Split(outWorkerCmd, "kubeadm join")
+	joinWorkerStr := strings.Split(joinWorkerStrList[1], "\n")
+	joinWorkerCmd = fmt.Sprintf("/usr/local/bin/kubeadm join %s", joinWorkerStr[0])
+
+	return joinMasterCmd, joinWorkerCmd
 }
 
 func JoinWorkerCmd(masters *cluster.MasterNodes) string {

@@ -74,7 +74,7 @@ func InitCluster(cfg *cluster.ClusterCfg, masters *cluster.MasterNodes) {
 	}
 }
 
-func RemoveMasterTaint(masters *cluster.MasterNodes) {
+func RemoveMastersTaint(masters *cluster.MasterNodes) {
 	var removeMasterTaint string
 	if masters.Hosts == nil {
 		removeMasterTaint = fmt.Sprintf("/usr/local/bin/kubectl taint nodes %s node-role.kubernetes.io/master=:NoSchedule-", cluster.DefaultHostName)
@@ -88,10 +88,14 @@ func RemoveMasterTaint(masters *cluster.MasterNodes) {
 		for _, master := range masters.Hosts {
 			if master.IsWorker == true {
 				removeMasterTaint = fmt.Sprintf("/usr/local/bin/kubectl taint nodes %s node-role.kubernetes.io/master=:NoSchedule-", master.Node.HostName)
-				master.CmdExec(removeMasterTaint)
-				addWorkerLabel := fmt.Sprintf("/usr/local/bin/kubectl label node %s node-role.kubernetes.io/worker=", master.Node.HostName)
-				exec.Command("sh", "-c", addWorkerLabel).Run()
+				RemoveMasterTaint(master, removeMasterTaint)
 			}
 		}
 	}
+}
+
+func RemoveMasterTaint(master cluster.ClusterNodeCfg, removeMasterTaint string) {
+	master.CmdExec(removeMasterTaint)
+	addWorkerLabel := fmt.Sprintf("/usr/local/bin/kubectl label node %s node-role.kubernetes.io/worker=", master.Node.HostName)
+	exec.Command("sh", "-c", addWorkerLabel).Run()
 }

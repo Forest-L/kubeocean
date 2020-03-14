@@ -13,6 +13,7 @@ func NewKubeoceanCommand() *cobra.Command {
 		Long:  "A simple parallel SSH tool that allows you to execute command combinations to cluster by SSH.",
 	}
 	rootCmd.AddCommand(create.NewCmdCreate())
+	rootCmd.AddCommand(NewCmdScaleCluster())
 	rootCmd.AddCommand(NewCmdVersion())
 	return rootCmd
 }
