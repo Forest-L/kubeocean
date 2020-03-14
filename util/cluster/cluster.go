@@ -261,9 +261,7 @@ func (cfg *ClusterCfg) GenerateHosts() []string {
 		if cfg.LBKubeApiserver.Address != "" {
 			lbHost = fmt.Sprintf("%s  %s", cfg.LBKubeApiserver.Address, cfg.LBKubeApiserver.Domain)
 		} else {
-			if len(masters.Hosts) == 1 {
-				lbHost = fmt.Sprintf("%s  %s", masters.Hosts[0].Node.InternalAddress, DefaultLBDomain)
-			}
+			lbHost = fmt.Sprintf("%s  %s", masters.Hosts[0].Node.InternalAddress, DefaultLBDomain)
 		}
 
 		for _, host := range cfg.Hosts {
