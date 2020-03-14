@@ -10,27 +10,6 @@ import (
 	"os/exec"
 )
 
-func InjectHosts(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
-	hosts := cfg.GenerateHosts()
-	injectHostsCmd := fmt.Sprintf("echo \"%s\"  >> /etc/hosts", hosts)
-	removeDuplicatesCmd := "awk ' !x[$0]++{print > \"/etc/hosts\"}' /etc/hosts"
-	if nodes.Hosts == nil {
-		if err := exec.Command("/bin/sh", "-c", injectHostsCmd).Run(); err != nil {
-			log.Fatal("Failed to Inject Hosts:\n%v", err)
-		}
-		if err1 := exec.Command("/bin/sh", "-c", fmt.Sprintf("\"%s\"", removeDuplicatesCmd)).Run(); err1 != nil {
-			log.Fatalf("Failed to Inject Hosts:\n%v", err1)
-		}
-	} else {
-		for _, host := range nodes.Hosts {
-			if err := host.CmdExec(injectHostsCmd); err != nil {
-				log.Fatal("Failed to Inject Hosts:\n%v", err)
-			}
-			host.CmdExec(removeDuplicatesCmd)
-		}
-	}
-}
-
 func DockerInstall(nodes *cluster.AllNodes) {
 	installDockerCmd := "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh"
 	if nodes.Hosts == nil && CheckDocker(nil) == false {
@@ -73,8 +52,8 @@ func CheckDocker(host *cluster.ClusterNodeCfg) bool {
 	}
 }
 
-func InitOS(nodes *cluster.AllNodes) {
-	tmpl.GenerateBootStrapScript()
+func InitOS(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
+	tmpl.GenerateBootStrapScript(cfg.GenerateHosts())
 	src := "/tmp/kubeocean/bootStrapScript.sh"
 	dst := "/tmp/kubeocean"
 

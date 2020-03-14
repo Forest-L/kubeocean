@@ -55,6 +55,18 @@ else
    echo 'nf_conntrack' > /etc/modules-load.d/kube_proxy-ipvs.conf
 fi
 
+sed -i ':a;$!{N;ba};s@# kubeocean hosts BEGIN.*# kubeocean hosts END@@' /etc/hosts
+
+cat >>/etc/hosts<<EOF
+# kubeocean hosts BEGIN
+{{- range hostsList }}
+{{ . }}
+{{- end }}
+# kubeocean hosts END
+EOF
+
+
+
 os_info=$(cat /etc/os-release)
 if [[ $os_info =~ "Ubuntu" || $os_info =~ "Debian" ]]; then
     sudo apt install -y iptables arptables ebtables > /dev/null

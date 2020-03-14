@@ -20,7 +20,7 @@ type File struct {
 	Tmpl *template.Template
 }
 
-func GenerateBootStrapScript() {
+func GenerateBootStrapScript(hostsList []string) {
 	tmpPath := "/tmp/kubeocean"
 	if util.IsExist(tmpPath) == false {
 		err := os.MkdirAll(tmpPath, os.ModePerm)
@@ -35,7 +35,7 @@ func GenerateBootStrapScript() {
 	if err != nil {
 		log.Errorf("%v", err)
 	}
-	err1 := BootStrapTmpl.Execute(file, nil)
+	err1 := BootStrapTmpl.Execute(file, hostsList)
 	if err1 != nil {
 		fmt.Println("test")
 		log.Errorf("%v", err1)

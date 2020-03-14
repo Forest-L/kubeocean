@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 const (
@@ -236,7 +235,7 @@ func (cfg *ClusterCfg) GenerateCertSANs(clusterName string) []string {
 	return defaultCertSANs
 }
 
-func (cfg *ClusterCfg) GenerateHosts() string {
+func (cfg *ClusterCfg) GenerateHosts() []string {
 	var lbHost string
 	hostsList := []string{}
 
@@ -248,6 +247,7 @@ func (cfg *ClusterCfg) GenerateHosts() string {
 			os.Exit(1)
 		}
 		lbHost = fmt.Sprintf("%s  %s", localIp, DefaultLBDomain)
+		hostsList = append(hostsList, fmt.Sprintf("%s  %s", localIp, DefaultHostName))
 	} else {
 		if cfg.LBKubeApiserver.Address != "" {
 			lbHost = fmt.Sprintf("%s  %s", cfg.LBKubeApiserver.Address, cfg.LBKubeApiserver.Domain)
@@ -265,8 +265,7 @@ func (cfg *ClusterCfg) GenerateHosts() string {
 	}
 
 	hostsList = append(hostsList, lbHost)
-	hosts := strings.Join(hostsList, "\n")
-	return hosts
+	return hostsList
 }
 
 func command_exists(cmd string) bool {

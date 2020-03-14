@@ -51,5 +51,3 @@ os_info=$(cat /etc/os-release)
 if [[ $os_info =~ "Ubuntu" || $os_info =~ "Debian" ]]; then
     sudo apt install -y iptables arptables ebtables > /dev/null
 fi
-
-echo "{{ . }}"
