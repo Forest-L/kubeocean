@@ -83,13 +83,21 @@ func GetKubeConfig(master *cluster.ClusterNodeCfg) {
 			log.Fatalf("Failed to generate kubeconfig")
 		}
 	} else {
-		createConfigDirCmd := "mkdir -p /root/.kube"
+		createConfigDirCmd := "mkdir -p /root/.kube && mkdir -p $HOME/.kube"
 		getKubeConfigCmd := "cp -f /etc/kubernetes/admin.conf /root/.kube/config"
+		getKubeConfigCmdUsr := "cp -f /etc/kubernetes/admin.conf $HOME/.kube/config"
+		chownKubeConfig := "chown $(id -u):$(id -g) $HOME/.kube/config"
 		if err := master.CmdExec(createConfigDirCmd); err != nil {
 			log.Fatalf("Failed to generate kubeconfig (%s):\n", master.Node.Address)
 		}
 
 		if err := master.CmdExec(getKubeConfigCmd); err != nil {
+			log.Fatalf("Failed to generate kubeconfig (%s):\n", master.Node.Address)
+		}
+		if err := master.CmdExec(getKubeConfigCmdUsr); err != nil {
+			log.Fatalf("Failed to generate kubeconfig (%s):\n", master.Node.Address)
+		}
+		if err := master.CmdExec(chownKubeConfig); err != nil {
 			log.Fatalf("Failed to generate kubeconfig (%s):\n", master.Node.Address)
 		}
 	}
