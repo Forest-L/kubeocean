@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/pixiake/kubeocean/install"
 	"github.com/pixiake/kubeocean/scale"
 	"github.com/pixiake/kubeocean/util/cluster"
@@ -34,24 +33,21 @@ func scaleCluster(clusterCfgFile string) {
 	allNodes, _, masterNodes, _, _ := cfg.GroupHosts()
 
 	clusterStatusInfo, joinMasterCmd, joinWorkerCmd := getClusterStatusInfo(masterNodes)
-	log.Info("BootStrap")
-	install.InitOS(cfg, allNodes)
-	log.Info("Override Hostname")
-	install.OverrideHostname(allNodes)
+
 	log.Info("Install Files Download")
-	install.InstallFilesDownload(cfg.KubeVersion)
-	log.Info("Install Docker")
-	install.DockerInstall(allNodes)
+	install.InstallFilesDownload(cfg)
+	install.GenerateBootStrapScript(cfg)
+
 	for _, node := range NewNodes(clusterStatusInfo, allNodes) {
-		log.Info("Get Kube Binary")
-		install.KubeBinary(cfg, &node)
-		log.Info("Set Kubelet Service")
-		install.SetKubeletService(allNodes)
+		install.BootStrapOS(&node)
+		install.OverrideHostname(&node)
+		install.InstallDocker(&node)
+		install.GetKubeBinary(cfg, &node)
+		install.SetKubeletService(&node)
 		if node.IsMaster {
 			scale.JoinMaster(&node, joinMasterCmd)
 			if node.IsWorker {
-				removeMasterTaint := fmt.Sprintf("/usr/local/bin/kubectl taint nodes %s node-role.kubernetes.io/master=:NoSchedule-", node.Node.HostName)
-				install.RemoveMasterTaint(node, removeMasterTaint)
+				install.RemoveMasterTaint(&node)
 			}
 		} else {
 			if node.IsWorker {
@@ -78,7 +74,6 @@ func getClusterStatusInfo(masters *cluster.MasterNodes) (string, string, string)
 }
 
 func NewNodes(clusterStatusInfo string, nodes *cluster.AllNodes) []cluster.ClusterNodeCfg {
-	fmt.Sprintf(clusterStatusInfo)
 	newNodes := []cluster.ClusterNodeCfg{}
 	for _, node := range nodes.Hosts {
 		if strings.Contains(clusterStatusInfo, node.Node.HostName) == false && strings.Contains(clusterStatusInfo, node.Node.InternalAddress) == false && (node.IsMaster || node.IsWorker) {
