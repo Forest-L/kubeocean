@@ -287,12 +287,13 @@ func (host *ClusterNodeCfg) privilegeCmd() (string, error) {
 	if host.Node.User != "root" {
 		if host.command_exists("sudo") {
 			sh_c = "sudo -E sh -c "
-		}
-		if host.command_exists("su") {
-			sh_c = "su -c "
 		} else {
-			err := "Error: this installer needs the ability to run commands as root.\nWe are unable to find either \"sudo\" or \"su\" available to make this happen."
-			return "", errors.New(err)
+			if host.command_exists("su") {
+				sh_c = "su -c "
+			} else {
+				err := "Error: this installer needs the ability to run commands as root.\nWe are unable to find either \"sudo\" or \"su\" available to make this happen."
+				return "", errors.New(err)
+			}
 		}
 	}
 	return sh_c, nil
