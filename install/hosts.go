@@ -31,7 +31,7 @@ func InstallDocker(node *cluster.ClusterNodeCfg) {
 
 func CheckDocker(host *cluster.ClusterNodeCfg) bool {
 	dockerCheckCmd := "which docker"
-	if host == nil {
+	if host.Node.InternalAddress == "" {
 		if err := exec.Command("which", "docker").Run(); err != nil {
 			return false
 		} else {
