@@ -57,6 +57,9 @@ func InitCluster(cfg *cluster.ClusterCfg, master *cluster.ClusterNodeCfg) {
 			log.Fatalf("Failed to deploy calico (%s):\n", master.Node.Address)
 
 		}
+		if master.IsWorker {
+			RemoveMasterTaint(master)
+		}
 	}
 }
 

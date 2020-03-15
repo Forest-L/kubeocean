@@ -83,7 +83,9 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 		for index, master := range masterNodes.Hosts {
 			if index != 0 {
 				scale.JoinMaster(&master, joinMasterCmd)
-				install.RemoveMasterTaint(&master)
+				if master.IsWorker {
+					install.RemoveMasterTaint(&master)
+				}
 			}
 		}
 		for _, worker := range workerNodes.Hosts {
