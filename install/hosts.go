@@ -59,7 +59,7 @@ func BootStrapOS(node *cluster.ClusterNodeCfg) {
 		}
 	} else {
 		log.Infof("BootStrapOS [%s]", node.Node.InternalAddress)
-		node.CmdExec("mkdir -p /tmp/kubeocean")
+		node.CmdExec("mkdir -p /tmp/kubeocean -m 777")
 		ssh.PushFile(node.Node.Address, src, dst, node.Node.User, node.Node.Port, node.Node.Password, true)
 		if out, err := node.CmdExecOut(src); err != nil {
 			fmt.Println(out)
