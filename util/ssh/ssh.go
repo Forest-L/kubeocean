@@ -1,9 +1,12 @@
 package ssh
 
 import (
+	"bufio"
 	"errors"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
+	"io"
 	"net"
 	"os"
 	"path"
@@ -150,9 +153,11 @@ func (server *Server) getSshClient() (client *ssh.Client, err error) {
 		for i := range questions {
 			yes, _ := regexp.MatchString("*yes*", questions[i])
 			if yes {
+				fmt.Println("yes")
 				answers[i] = "yes"
 
 			} else {
+				fmt.Println("passwd")
 				answers[i] = server.Psw
 			}
 		}
@@ -198,13 +203,65 @@ func (server *Server) SRunCmd() Result {
 	}
 	defer session.Close()
 
-	cmd := server.Cmd
-	bs, err := session.CombinedOutput(cmd)
+	modes := ssh.TerminalModes{
+		ssh.ECHO:          0,     // disable echoing
+		ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
+		ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
+	}
+
+	err = session.RequestPty("xterm", 80, 40, modes)
 	if err != nil {
-		rs.Err = err
+		log.Fatalf("%v", err)
+	}
+
+	in, err := session.StdinPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	out, err := session.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var output []byte
+
+	go func(in io.WriteCloser, out io.Reader, output *[]byte) {
+		var (
+			line string
+			r    = bufio.NewReader(out)
+		)
+		for {
+			b, err := r.ReadByte()
+			if err != nil {
+				break
+			}
+
+			*output = append(*output, b)
+
+			if b == byte('\n') {
+				line = ""
+				continue
+			}
+
+			line += string(b)
+
+			if (strings.HasPrefix(line, "[sudo] password for ") || strings.HasPrefix(line, "Password")) && strings.HasSuffix(line, ": ") {
+				_, err = in.Write([]byte(server.Psw + "\n"))
+				if err != nil {
+					break
+				}
+			}
+		}
+	}(in, out, &output)
+
+	cmd := server.Cmd
+	_, err1 := session.Output(cmd)
+	if err1 != nil {
+		rs.Err = err1
 		return rs
 	}
-	rs.Result = string(bs)
+	rs.Result = string(output)
 	return rs
 }
 
