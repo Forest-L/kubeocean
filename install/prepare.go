@@ -34,29 +34,33 @@ func InstallFilesDownload(cfg *cluster.ClusterCfg) {
 
 	log.Info("Kubeadm being download ...")
 	if util.IsExist(kubeadm) == false {
-		if err := exec.Command("/bin/sh", "-c", getKubeadmCmd).Run(); err != nil {
+		if out, err := exec.Command("/bin/sh", "-c", getKubeadmCmd).CombinedOutput(); err != nil {
 			log.Errorf("Failed to get kubeadm: %v", err)
+			fmt.Println(string(out))
 		}
 	}
 
 	log.Info("Kubelet being download ...")
 	if util.IsExist(kubelet) == false {
-		if err := exec.Command("/bin/sh", "-c", getKubeletCmd).Run(); err != nil {
+		if out, err := exec.Command("/bin/sh", "-c", getKubeletCmd).CombinedOutput(); err != nil {
 			log.Errorf("Failed to get kubelet: %v", err)
+			fmt.Println(string(out))
 		}
 	}
 
 	log.Info("Kubectl being download ...")
 	if util.IsExist(kubectl) == false {
-		if err := exec.Command("/bin/sh", "-c", getKubectlCmd).Run(); err != nil {
+		if out, err := exec.Command("/bin/sh", "-c", getKubectlCmd).CombinedOutput(); err != nil {
 			log.Errorf("Failed to get kubectl: %v", err)
+			fmt.Println(string(out))
 		}
 	}
 
 	log.Info("KubeCni being download ...")
 	if util.IsExist(kubeCni) == false {
-		if err := exec.Command("/bin/sh", "-c", getKubeCniCmd).Run(); err != nil {
+		if out, err := exec.Command("/bin/sh", "-c", getKubeCniCmd).CombinedOutput(); err != nil {
 			log.Errorf("Failed to get kubecni: %v", err)
+			fmt.Println(string(out))
 		}
 	}
 }
