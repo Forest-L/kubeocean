@@ -38,9 +38,10 @@ func scaleCluster(clusterCfgFile string) {
 	install.GenerateBootStrapScript(cfg)
 	install.InstallFilesDownload(cfg)
 	install.GenerateKubeletService()
-
-	for _, node := range NewNodes(clusterStatusInfo, allNodes) {
+	for _, node := range allNodes.Hosts {
 		install.BootStrapOS(&node)
+	}
+	for _, node := range NewNodes(clusterStatusInfo, allNodes) {
 		install.OverrideHostname(&node)
 		install.InstallDocker(&node)
 		install.GetKubeBinary(cfg, &node)
