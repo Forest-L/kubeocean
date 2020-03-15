@@ -21,17 +21,27 @@ func GetJoinCmd(master *cluster.ClusterNodeCfg) (string, string) {
 	}
 	reg := regexp.MustCompile("[0-9|a-z]{64}")
 	CertificateKey := reg.FindAllString(out, -1)[0]
-
-	// Get Join Worker Command
-	tokenCreateWorkerCmd := "/usr/local/bin/kubeadm token create --print-join-command"
-	outWorkerCmd, errWorker := master.CmdExecOut(tokenCreateWorkerCmd)
-	if errWorker != nil {
+	tokenCreateMasterCmd := fmt.Sprintf("/usr/local/bin/kubeadm token create --print-join-command --certificate-key %s", CertificateKey)
+	outMasterCmd, errMaster := master.CmdExecOut(tokenCreateMasterCmd)
+	if errMaster != nil {
 		log.Fatalf("Failed to create token (%s):\n", master.Node.Address)
 		os.Exit(1)
 	}
-	joinWorkerStrList := strings.Split(outWorkerCmd, "kubeadm join")
-	joinWorkerStr := strings.Split(joinWorkerStrList[1], "\n")
-	joinWorkerCmd = fmt.Sprintf("/usr/local/bin/kubeadm join %s", joinWorkerStr[0])
-	joinMasterCmd = fmt.Sprintf("/usr/local/bin/kubeadm join %s --control-plane --certificate-key %s", joinWorkerStr[0], CertificateKey)
+	fmt.Println(outMasterCmd)
+	joinMasterStrList := strings.Split(outMasterCmd, "kubeadm join")
+	//joinMasterStr := strings.Split(joinMasterStrList[1], "\n")
+	joinMasterCmd = fmt.Sprintf("/usr/local/bin/kubeadm join %s", joinMasterStrList[1])
+
+	// Get Join Worker Command
+	//tokenCreateWorkerCmd := "/usr/local/bin/kubeadm token create --print-join-command"
+	//outWorkerCmd, errWorker := master.CmdExecOut(tokenCreateWorkerCmd)
+	//if errWorker != nil {
+	//	log.Fatalf("Failed to create token (%s):\n", master.Node.Address)
+	//	os.Exit(1)
+	//}
+	joinWorkerStrList := strings.Split(joinMasterCmd, "--control-plane")
+	//joinWorkerStr := strings.Split(joinWorkerStrList[1], "\n")
+	joinWorkerCmd = joinWorkerStrList[0]
+
 	return joinMasterCmd, joinWorkerCmd
 }
