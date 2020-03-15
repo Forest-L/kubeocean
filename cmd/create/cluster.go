@@ -44,50 +44,42 @@ func createCluster(clusterCfgFile string) {
 
 func createAllinone(cfg *cluster.ClusterCfg) {
 	nodes := cluster.AllNodes{}
-	masters := cluster.MasterNodes{}
-	log.Info("BootStrap")
-	install.InitOS(cfg, &nodes)
-	log.Info("Override Hostname")
-	install.OverrideHostname(&nodes)
 	log.Info("Install Files Download")
-	install.InstallFilesDownload(cfg.KubeVersion)
-	log.Info("Install Docker")
-	install.DockerInstall(&nodes)
-	log.Info("Get Kube Binary")
-	install.GetKubeBinary(cfg, &nodes)
-	log.Info("Set Kubelet Service")
-	install.SetKubeletService(&nodes)
+	install.InstallFilesDownload(cfg)
+	install.BootStrapOS(&nodes.Hosts[0])
+	install.OverrideHostname(&nodes.Hosts[0])
+	install.InstallDocker(&nodes.Hosts[0])
+	install.GetKubeBinary(cfg, &nodes.Hosts[0])
+	install.SetKubeletService(&nodes.Hosts[0])
 	log.Info("Init Cluster")
-	install.InitCluster(cfg, &masters)
-	install.RemoveMastersTaint(&masters)
+	install.InitCluster(cfg, &nodes.Hosts[0])
+	install.RemoveMasterTaint(&nodes.Hosts[0])
 
 }
 
 func createMultiNodes(cfg *cluster.ClusterCfg) {
 	allNodes, _, masterNodes, workerNodes, k8sNodes := cfg.GroupHosts()
-	log.Info("BootStrap")
-	install.InitOS(cfg, allNodes)
-	log.Info("Override Hostname")
-	install.OverrideHostname(allNodes)
 	log.Info("Install Files Download")
-	install.InstallFilesDownload(cfg.KubeVersion)
-	log.Info("Install Docker")
-	install.DockerInstall(allNodes)
-	log.Info("Get Kube Binary")
-	install.GetKubeBinary(cfg, allNodes)
-	log.Info("Set Kubelet Service")
-	install.SetKubeletService(allNodes)
+	install.InstallFilesDownload(cfg)
+	for _, node := range allNodes.Hosts {
+		install.BootStrapOS(&node)
+		install.OverrideHostname(&node)
+		install.InstallDocker(&node)
+		install.GetKubeBinary(cfg, &node)
+		install.SetKubeletService(&node)
+	}
+
 	log.Info("Init Cluster")
-	install.InitCluster(cfg, masterNodes)
+	install.InitCluster(cfg, &masterNodes.Hosts[0])
 
 	if len(k8sNodes.Hosts) > 1 {
 		joinMasterCmd, joinWorkerCmd := scale.GetJoinCmd(&masterNodes.Hosts[0])
 		for index, master := range masterNodes.Hosts {
 			if index != 0 {
 				scale.JoinMaster(&master, joinMasterCmd)
+				install.RemoveMasterTaint(&master)
 			}
 		}
-		install.RemoveMastersTaint(masterNodes)
 		for _, worker := range workerNodes.Hosts {
 			if worker.IsMaster != true {
 				scale.JoinWorker(&worker, joinWorkerCmd)

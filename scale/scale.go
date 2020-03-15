@@ -45,18 +45,18 @@ func GetJoinCmd(master *cluster.ClusterNodeCfg) (string, string) {
 	return joinMasterCmd, joinWorkerCmd
 }
 
-func JoinWorkerCmd(masters *cluster.MasterNodes) string {
-	var joinWorkerCmd string
-	master := masters.Hosts[0]
-
-	tokenCreateCmd := "/usr/local/bin/kubeadm token create --print-join-command"
-	out, err1 := master.CmdExecOut(tokenCreateCmd)
-	if err1 != nil {
-		log.Fatalf("Failed to create token (%s):\n", master.Node.Address)
-		os.Exit(1)
-	}
-	joinStrList := strings.Split(out, "kubeadm join")
-	joinStr := strings.Split(joinStrList[1], "\n")
-	joinWorkerCmd = fmt.Sprintf("/usr/local/bin/kubeadm join %s", joinStr[0])
-	return joinWorkerCmd
-}
+//func JoinWorkerCmd(masters *cluster.MasterNodes) string {
+//	var joinWorkerCmd string
+//	master := masters.Hosts[0]
+//
+//	tokenCreateCmd := "/usr/local/bin/kubeadm token create --print-join-command"
+//	out, err1 := master.CmdExecOut(tokenCreateCmd)
+//	if err1 != nil {
+//		log.Fatalf("Failed to create token (%s):\n", master.Node.Address)
+//		os.Exit(1)
+//	}
+//	joinStrList := strings.Split(out, "kubeadm join")
+//	joinStr := strings.Split(joinStrList[1], "\n")
+//	joinWorkerCmd = fmt.Sprintf("/usr/local/bin/kubeadm join %s", joinStr[0])
+//	return joinWorkerCmd
+//}

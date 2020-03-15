@@ -56,11 +56,11 @@ func createDirectory(directory []string) {
 }
 
 func GenerateKubeletFiles() {
-	dir := []string{"/etc/systemd/system/kubelet.service.d"}
-	createDirectory(dir)
+	//dir := []string{"/etc/systemd/system/kubelet.service.d"}
+	//createDirectory(dir)
 
-	kubeletService := File{Name: "/etc/systemd/system/kubelet.service", Pem: 0644, Tmpl: KubeletServiceTempl}
-	kubeletEnv := File{Name: "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf", Pem: 0644, Tmpl: KubeletEnvTempl}
+	kubeletService := File{Name: "/tmp/kubeocean/kubelet.service", Pem: 0644, Tmpl: KubeletServiceTempl}
+	kubeletEnv := File{Name: "/tmp/kubeocean/10-kubeadm.conf", Pem: 0644, Tmpl: KubeletEnvTempl}
 
 	kubeletFiles := []File{kubeletService, kubeletEnv}
 	for _, f := range kubeletFiles {

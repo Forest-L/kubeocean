@@ -13,22 +13,15 @@ func SetKubeadmCfg(cfg *cluster.ClusterCfg) {
 	tmpl.GenerateKubeadmFiles(cfg)
 }
 
-func InitCluster(cfg *cluster.ClusterCfg, masters *cluster.MasterNodes) {
+func InitCluster(cfg *cluster.ClusterCfg, master *cluster.ClusterNodeCfg) {
 	SetKubeadmCfg(cfg)
-	if masters.Hosts == nil {
-		exec.Command("sh", "-c", "cp -f /tmp/kubeocean/kubeadm-config.yaml /etc/kubernetes").CombinedOutput()
+	if master.Node.InternalAddress == "" {
+		exec.Command("sh", "-c", "cp -f /tmp/kubeocean/kubeadm-config.yaml /etc/kubernetes").Run()
 		if out, err := exec.Command("sh", "-c", "/usr/local/bin/kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml").CombinedOutput(); err != nil {
-			log.Fatalf("Failed to init cluster:\n %v", out)
+			log.Fatalf("Failed to init cluster:\n %v", string(out))
 		}
 
-		createConfigDirCmd := "mkdir -p /root/.kube"
-		getKubeConfigCmd := "cp -f /etc/kubernetes/admin.conf /root/.kube/config"
-		if err := exec.Command("sh", "-c", createConfigDirCmd).Run(); err != nil {
-			log.Fatalf("Failed to generate kubeconfig")
-		}
-		if err := exec.Command("sh", "-c", getKubeConfigCmd).Run(); err != nil {
-			log.Fatalf("Failed to generate kubeconfig")
-		}
+		GetKubeConfig(master)
 
 		tmpl.GenerateNetworkPluginFiles(cfg)
 		getNetworkPluginFileCmd := "cp -f /tmp/kubeocean/calico.yaml /etc/kubernetes"
@@ -41,61 +34,61 @@ func InitCluster(cfg *cluster.ClusterCfg, masters *cluster.MasterNodes) {
 		}
 
 	} else {
-		for index, master := range masters.Hosts {
-			if index == 0 {
-				ssh.PushFile(master.Node.Address, "/tmp/kubeocean/kubeadm-config.yaml", "/etc/kubernetes", master.Node.User, master.Node.Port, master.Node.Password, true)
-				initClusterCmd := "/usr/local/bin/kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml"
-				if err := master.CmdExec(initClusterCmd); err != nil {
-					log.Fatalf("Failed to init cluster (%s):\n", master.Node.Address)
-				}
+		ssh.PushFile(master.Node.Address, "/tmp/kubeocean/kubeadm-config.yaml", "/etc/kubernetes", master.Node.User, master.Node.Port, master.Node.Password, true)
+		initClusterCmd := "/usr/local/bin/kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml"
+		if err := master.CmdExec(initClusterCmd); err != nil {
+			log.Fatalf("Failed to init cluster (%s):\n", master.Node.Address)
+		}
 
-				createConfigDirCmd := "mkdir -p /root/.kube"
-				getKubeConfigCmd := "cp -f /etc/kubernetes/admin.conf /root/.kube/config"
-				if err := master.CmdExec(createConfigDirCmd); err != nil {
-					log.Fatalf("Failed to generate kubeconfig (%s):\n", master.Node.Address)
-				}
+		GetKubeConfig(master)
 
-				if err := master.CmdExec(getKubeConfigCmd); err != nil {
-					log.Fatalf("Failed to generate kubeconfig (%s):\n", master.Node.Address)
-				}
-				tmpl.GenerateNetworkPluginFiles(cfg)
-				deployNetworkPluginCmd := fmt.Sprintf("/usr/local/bin/kubectl apply -f /etc/kubernetes/%s.yaml", cfg.Network.Plugin)
-				if cfg.Network.Plugin == "calico" {
-					ssh.PushFile(master.Node.Address, "/tmp/kubeocean/calico.yaml", "/etc/kubernetes", master.Node.User, master.Node.Port, master.Node.Password, true)
-				}
-				if cfg.Network.Plugin == "flannel" {
-					ssh.PushFile(master.Node.Address, "/tmp/kubeocean/flannelyaml", "/etc/kubernetes", master.Node.User, master.Node.Port, master.Node.Password, true)
-				}
-				if err := master.CmdExec(deployNetworkPluginCmd); err != nil {
-					log.Fatalf("Failed to deploy calico (%s):\n", master.Node.Address)
-				}
-			}
+		tmpl.GenerateNetworkPluginFiles(cfg)
+		deployNetworkPluginCmd := fmt.Sprintf("/usr/local/bin/kubectl apply -f /etc/kubernetes/%s.yaml", cfg.Network.Plugin)
+		if cfg.Network.Plugin == "calico" {
+			ssh.PushFile(master.Node.Address, "/tmp/kubeocean/calico.yaml", "/etc/kubernetes", master.Node.User, master.Node.Port, master.Node.Password, true)
+		}
+		if cfg.Network.Plugin == "flannel" {
+			ssh.PushFile(master.Node.Address, "/tmp/kubeocean/flannelyaml", "/etc/kubernetes", master.Node.User, master.Node.Port, master.Node.Password, true)
+		}
+		if err := master.CmdExec(deployNetworkPluginCmd); err != nil {
+			log.Fatalf("Failed to deploy calico (%s):\n", master.Node.Address)
+
 		}
 	}
 }
 
-func RemoveMastersTaint(masters *cluster.MasterNodes) {
+func RemoveMasterTaint(master *cluster.ClusterNodeCfg) {
 	var removeMasterTaint string
-	if masters.Hosts == nil {
+	if master.Node.InternalAddress == "" {
 		removeMasterTaint = fmt.Sprintf("/usr/local/bin/kubectl taint nodes %s node-role.kubernetes.io/master=:NoSchedule-", cluster.DefaultHostName)
-		err := exec.Command("sh", "-c", removeMasterTaint).Run()
-		if err != nil {
-			log.Fatalf("Failed to Remove Master Taint: %v", err)
-		}
-		addWorkerLabel := fmt.Sprintf("/usr/local/bin/kubectl label node %s node-role.kubernetes.io/worker=", cluster.DefaultHostName)
-		exec.Command("sh", "-c", addWorkerLabel).Run()
+		exec.Command("sh", "-c", removeMasterTaint).Run()
 	} else {
-		for _, master := range masters.Hosts {
-			if master.IsWorker == true {
-				removeMasterTaint = fmt.Sprintf("/usr/local/bin/kubectl taint nodes %s node-role.kubernetes.io/master=:NoSchedule-", master.Node.HostName)
-				RemoveMasterTaint(master, removeMasterTaint)
-			}
-		}
+		removeMasterTaint = fmt.Sprintf("/usr/local/bin/kubectl taint nodes %s node-role.kubernetes.io/master=:NoSchedule-", master.Node.HostName)
+		master.CmdExec(removeMasterTaint)
+		addWorkerLabel := fmt.Sprintf("/usr/local/bin/kubectl label node %s node-role.kubernetes.io/worker=", master.Node.HostName)
+		master.CmdExec(addWorkerLabel)
 	}
 }
 
-func RemoveMasterTaint(master cluster.ClusterNodeCfg, removeMasterTaint string) {
-	master.CmdExec(removeMasterTaint)
-	addWorkerLabel := fmt.Sprintf("/usr/local/bin/kubectl label node %s node-role.kubernetes.io/worker=", master.Node.HostName)
-	exec.Command("sh", "-c", addWorkerLabel).Run()
+func GetKubeConfig(master *cluster.ClusterNodeCfg) {
+	if master.Node.InternalAddress == "" {
+		createConfigDirCmd := "mkdir -p /root/.kube"
+		getKubeConfigCmd := "cp -f /etc/kubernetes/admin.conf /root/.kube/config"
+		if err := exec.Command("sh", "-c", createConfigDirCmd).Run(); err != nil {
+			log.Fatalf("Failed to generate kubeconfig")
+		}
+		if err := exec.Command("sh", "-c", getKubeConfigCmd).Run(); err != nil {
+			log.Fatalf("Failed to generate kubeconfig")
+		}
+	} else {
+		createConfigDirCmd := "mkdir -p /root/.kube"
+		getKubeConfigCmd := "cp -f /etc/kubernetes/admin.conf /root/.kube/config"
+		if err := master.CmdExec(createConfigDirCmd); err != nil {
+			log.Fatalf("Failed to generate kubeconfig (%s):\n", master.Node.Address)
+		}
+
+		if err := master.CmdExec(getKubeConfigCmd); err != nil {
+			log.Fatalf("Failed to generate kubeconfig (%s):\n", master.Node.Address)
+		}
+	}
 }

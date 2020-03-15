@@ -2,15 +2,19 @@ package install
 
 import (
 	"fmt"
+	"github.com/pixiake/kubeocean/tmpl"
 	"github.com/pixiake/kubeocean/util"
 	"github.com/pixiake/kubeocean/util/cluster"
 	log "github.com/sirupsen/logrus"
 	"os/exec"
 )
 
-func InstallFilesDownload(kubeVersion string) {
-	if kubeVersion == "" {
+func InstallFilesDownload(cfg *cluster.ClusterCfg) {
+	var kubeVersion string
+	if cfg.KubeVersion == "" {
 		kubeVersion = cluster.DefaultKubeVersion
+	} else {
+		kubeVersion = cfg.KubeVersion
 	}
 
 	kubeadmUrl := fmt.Sprintf("https://kubernetes-release.pek3b.qingstor.com/release/%s/bin/linux/%s/kubeadm", kubeVersion, cluster.DefaultArch)
@@ -55,4 +59,12 @@ func InstallFilesDownload(kubeVersion string) {
 			log.Errorf("Failed to get kubecni: %v", err)
 		}
 	}
+}
+
+func GenerateBootStrapScript(cfg *cluster.ClusterCfg) {
+	tmpl.GenerateBootStrapScript(cfg.GenerateHosts())
+}
+
+func GenerateKubeletService() {
+	tmpl.GenerateKubeletFiles()
 }
