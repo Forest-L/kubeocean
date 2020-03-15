@@ -20,7 +20,13 @@ func JoinWorker(worker *cluster.ClusterNodeCfg, joinWorkerCmd string) {
 
 func GetKubeconfig(worker *cluster.ClusterNodeCfg) {
 	configSrc := "/tmp/kubeocean/config"
-	congigDst := fmt.Sprintf("/home/%s/.kube", worker.Node.User)
+	var congigDst string
+	if worker.Node.User == "root" {
+		congigDst = "/root/.kube"
+	} else {
+		congigDst = fmt.Sprintf("/home/%s/.kube", worker.Node.User)
+	}
+
 	createConfigDirCmd := "mkdir -p /root/.kube && mkdir -p $HOME/.kube"
 	chownKubeConfig := "chown $(id -u):$(id -g) $HOME/.kube/config"
 
