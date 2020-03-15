@@ -29,7 +29,7 @@ systemctl stop firewald &> /dev/null
 systemctl stop ufw &> /dev/null
 
 modinfo br_netfilter
-if [[ $? -eq 0 ]]; then
+if [ $? -eq 0 ]; then
    modprobe br_netfilter
    mkdir -p /etc/modules-load.d
    echo 'br_netfilter' > /etc/modules-load.d/kubeocean-br_netfilter.conf
@@ -48,7 +48,7 @@ ip_vs_sh
 EOF
 
 modprobe nf_conntrack_ipv4
-if [[ $? -eq 0 ]]; then
+if [ $? -eq 0 ]; then
    echo 'nf_conntrack_ipv4' > /etc/modules-load.d/kube_proxy-ipvs.conf
 else
    modprobe nf_conntrack
@@ -64,9 +64,4 @@ cat >>/etc/hosts<<EOF
 {{- end }}
 # kubeocean hosts END
 EOF
-
-os_info=$(cat /etc/os-release)
-if [[ $os_info =~ "Ubuntu" || $os_info =~ "Debian" ]]; then
-    sudo apt install -y iptables arptables ebtables > /dev/null
-fi
     `)))
