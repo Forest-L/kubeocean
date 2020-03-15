@@ -5,6 +5,7 @@ import (
 	"github.com/pixiake/kubeocean/util/cluster"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -18,9 +19,8 @@ func GetJoinCmd(master *cluster.ClusterNodeCfg) (string, string) {
 		log.Fatalf("Failed to upload-certs (%s):\n", master.Node.Address)
 		os.Exit(1)
 	}
-	outList := strings.Split(out, "Using certificate key:\n")
-	certificateKeyStr := strings.Split(outList[1], "\n")
-	CertificateKey := certificateKeyStr[0]
+	reg := regexp.MustCompile("[0-9|a-z]{64}")
+	CertificateKey := reg.FindAllString(out, -1)[0]
 	tokenCreateMasterCmd := fmt.Sprintf("/usr/local/bin/kubeadm token create --print-join-command --certificate-key %s", CertificateKey)
 	outMasterCmd, errMaster := master.CmdExecOut(tokenCreateMasterCmd)
 	if errMaster != nil {
