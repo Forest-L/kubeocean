@@ -27,6 +27,7 @@ func GetJoinCmd(master *cluster.ClusterNodeCfg) (string, string) {
 		log.Fatalf("Failed to create token (%s):\n", master.Node.Address)
 		os.Exit(1)
 	}
+	fmt.Println(outMasterCmd)
 	joinMasterStrList := strings.Split(outMasterCmd, "kubeadm join")
 	joinMasterStr := strings.Split(joinMasterStrList[1], "\n")
 	joinMasterCmd = fmt.Sprintf("/usr/local/bin/kubeadm join %s", joinMasterStr[0])
