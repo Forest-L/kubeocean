@@ -275,28 +275,27 @@ func (cfg *ClusterCfg) GenerateHosts() []string {
 	return hostsList
 }
 
-func command_exists(cmd string) bool {
-	err := exec.Command("command", "-v", cmd, ">", "/dev/null", "2>&1").Run()
+func (host *ClusterNodeCfg) command_exists(cmd string) bool {
+	err := host.CmdExec(fmt.Sprintf("command -v %s > /dev/null 2>&1", cmd))
 	if err != nil {
 		return false
 	}
 	return true
 }
 
-func (host *NodeCfg) privilegeCmd() (string, error) {
+func (host *ClusterNodeCfg) privilegeCmd() (string, error) {
 	sh_c := "sh -c "
-	if host.User != "root" {
-		if command_exists("sudo") {
+	if host.Node.User != "root" {
+		if host.command_exists("sudo") {
 			sh_c = "sudo -E sh -c "
 		}
-		if command_exists("su") {
+		if host.command_exists("su") {
 			sh_c = "su -c "
 		} else {
 			err := "Error: this installer needs the ability to run commands as root.\nWe are unable to find either \"sudo\" or \"su\" available to make this happen."
 			return "", errors.New(err)
 		}
 	}
-
 	return sh_c, nil
 }
 
