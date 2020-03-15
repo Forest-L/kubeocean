@@ -7,7 +7,6 @@ import (
 	"github.com/pixiake/kubeocean/util/ssh"
 	"log"
 	"os"
-	"os/exec"
 )
 
 const (
@@ -155,7 +154,7 @@ func (cfg *ClusterCfg) GroupHosts() (*AllNodes, *EtcdNodes, *MasterNodes, *Worke
 		if clusterNode.IsMaster == true || clusterNode.IsWorker == true {
 			k8sNodes.Hosts = append(k8sNodes.Hosts, clusterNode)
 		}
-		execCmd, err := host.privilegeCmd()
+		execCmd, err := clusterNode.privilegeCmd()
 		if err != nil {
 			log.Fatal(err)
 			os.Exit(1)
