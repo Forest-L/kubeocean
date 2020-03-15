@@ -28,16 +28,18 @@ func GetKubeconfig(worker *cluster.ClusterNodeCfg) {
 	}
 
 	createConfigDirCmd := "mkdir -p /root/.kube && mkdir -p $HOME/.kube"
+	chownKubeDir := "chown $(id -u):$(id -g) $HOME/.kube"
 	chownKubeConfig := "chown $(id -u):$(id -g) $HOME/.kube/config"
 
 	if err := worker.CmdExec(createConfigDirCmd); err != nil {
 		log.Fatalf("Failed to generate kubeconfig (%s):\n", worker.Node.Address)
 	}
+	worker.CmdExec(chownKubeDir)
 	ssh.PushFile(worker.Node.Address, configSrc, congigDst, worker.Node.User, worker.Node.Port, worker.Node.Password, true)
 	if err := worker.CmdExec(chownKubeConfig); err != nil {
 		log.Fatalf("Failed to generate kubeconfig (%s):\n", worker.Node.Address)
 	}
-
-	worker.CmdExec(fmt.Sprintf("cp -f /home/%s/.kube/config /root/.kube", worker.Node.User))
-
+	if worker.Node.User != "root" {
+		worker.CmdExec(fmt.Sprintf("cp -f /home/%s/.kube/config /root/.kube", worker.Node.User))
+	}
 }
