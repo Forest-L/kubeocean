@@ -146,8 +146,10 @@ func SetKubeletService(node *cluster.ClusterNodeCfg) {
 	} else {
 		log.Info("Set Kubelet Service [%s]", node.Node.InternalAddress)
 		node.CmdExec("mkdir -p /etc/systemd/system/kubelet.service.d")
-		ssh.PushFile(node.Node.Address, "/tmp/kubeocean/kubelet.service", "/etc/systemd/system", node.Node.User, node.Node.Port, node.Node.Password, true)
-		ssh.PushFile(node.Node.Address, "/tmp/kubeocean/10-kubeadm.conf", "/etc/systemd/system/kubelet.service.d", node.Node.User, node.Node.Port, node.Node.Password, true)
+		ssh.PushFile(node.Node.Address, "/tmp/kubeocean/kubelet.service", "/tmp/kubeocean", node.Node.User, node.Node.Port, node.Node.Password, true)
+		ssh.PushFile(node.Node.Address, "/tmp/kubeocean/10-kubeadm.conf", "/tmp/kubeocean", node.Node.User, node.Node.Port, node.Node.Password, true)
+		node.CmdExec(fmt.Sprintf("cp -f /tmp/kubeocean/kubelet.service /etc/systemd/system"))
+		node.CmdExec(fmt.Sprintf("cp -f /tmp/kubeocean/10-kubeadm.conf /etc/systemd/system/kubelet.service.d"))
 	}
 }
 
@@ -159,7 +161,7 @@ func OverrideHostname(node *cluster.ClusterNodeCfg) {
 			log.Fatalf("Failed to Override Hostname: %v", err)
 		}
 	} else {
-		log.Info("Override Hostname [%s]", node.Node.InternalAddress)
+		log.Infof("Override Hostname [%s]", node.Node.InternalAddress)
 		node.CmdExec(fmt.Sprintf("hostnamectl set-hostname %s", node.Node.HostName))
 	}
 }
