@@ -131,6 +131,14 @@ func (cfg *ClusterCfg) GroupHosts() (*AllNodes, *EtcdNodes, *MasterNodes, *Worke
 
 	for _, host := range hosts {
 		clusterNode := ClusterNodeCfg{Node: host}
+
+		execCmd, err := clusterNode.privilegeCmd()
+		if err != nil {
+			log.Fatal(err)
+			os.Exit(1)
+		}
+		clusterNode.PrivilegeCmd = execCmd
+
 		for _, role := range host.Role {
 			if role == "etcd" {
 				clusterNode.IsEtcd = true
@@ -154,12 +162,6 @@ func (cfg *ClusterCfg) GroupHosts() (*AllNodes, *EtcdNodes, *MasterNodes, *Worke
 		if clusterNode.IsMaster == true || clusterNode.IsWorker == true {
 			k8sNodes.Hosts = append(k8sNodes.Hosts, clusterNode)
 		}
-		execCmd, err := clusterNode.privilegeCmd()
-		if err != nil {
-			log.Fatal(err)
-			os.Exit(1)
-		}
-		clusterNode.PrivilegeCmd = execCmd
 		allNodes.Hosts = append(allNodes.Hosts, clusterNode)
 	}
 	return &allNodes, &etcdNodes, &masterNodes, &workerNodes, &k8sNodes
