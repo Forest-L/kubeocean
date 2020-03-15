@@ -43,7 +43,9 @@ func createCluster(clusterCfgFile string) {
 }
 
 func createAllinone(cfg *cluster.ClusterCfg) {
-	nodes := cluster.AllNodes{}
+	allinone := cluster.ClusterNodeCfg{}
+	nodeList := []cluster.ClusterNodeCfg{allinone}
+	nodes := cluster.AllNodes{nodeList}
 	log.Info("Install Files Download")
 	install.InstallFilesDownload(cfg)
 	install.GenerateBootStrapScript(cfg)
