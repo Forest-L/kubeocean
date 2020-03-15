@@ -31,6 +31,7 @@ func GetJoinCmd(master *cluster.ClusterNodeCfg) (string, string) {
 	joinMasterStrList := strings.Split(outMasterCmd, "kubeadm join")
 	//joinMasterStr := strings.Split(joinMasterStrList[1], "\n")
 	joinMasterCmd = fmt.Sprintf("/usr/local/bin/kubeadm join %s", joinMasterStrList[1])
+	joinMasterCmd = strings.TrimRight(joinMasterCmd, " \n")
 
 	// Get Join Worker Command
 	//tokenCreateWorkerCmd := "/usr/local/bin/kubeadm token create --print-join-command"
