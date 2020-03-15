@@ -61,8 +61,9 @@ func BootStrapOS(node *cluster.ClusterNodeCfg) {
 		log.Infof("BootStrapOS [%s]", node.Node.InternalAddress)
 		node.CmdExec("mkdir -p /tmp/kubeocean")
 		ssh.PushFile(node.Node.Address, src, dst, node.Node.User, node.Node.Port, node.Node.Password, true)
-		if err := node.CmdExec(src); err != nil {
+		if out, err := node.CmdExecOut(src); err != nil {
 			log.Fatalf("Bootstrap is Failed [%s]:\n", node.Node.Address)
+			fmt.Println(out)
 		}
 	}
 }
