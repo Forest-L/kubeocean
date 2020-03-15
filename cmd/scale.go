@@ -35,8 +35,8 @@ func scaleCluster(clusterCfgFile string) {
 	clusterStatusInfo, joinMasterCmd, joinWorkerCmd := getClusterStatusInfo(masterNodes)
 
 	log.Info("Install Files Download")
-	install.InstallFilesDownload(cfg)
 	install.GenerateBootStrapScript(cfg)
+	install.InstallFilesDownload(cfg)
 	install.GenerateKubeletService()
 
 	for _, node := range NewNodes(clusterStatusInfo, allNodes) {
