@@ -73,9 +73,11 @@ func InstallDocker(nodes *cluster.AllNodes) {
 		for _, node := range nodes.Hosts {
 			ccons <- struct{}{}
 			wg.Add(1)
-			go func(node *cluster.ClusterNodeCfg, rs chan string) {
-				if err := node.CmdExec(dockerCheckCmd); err != nil {
+			go func(host *cluster.ClusterNodeCfg, rs chan string) {
+				if err := host.CmdExec(dockerCheckCmd); err != nil {
 					ssh.CmdExec(node.Node.Address, node.Node.User, node.Node.Port, node.Node.Password, true, "", installDockerCmd)
+				} else {
+					log.Infof("Docker already exists. [%s]", host.Node.InternalAddress)
 				}
 				rs <- "ok"
 			}(&node, result)
