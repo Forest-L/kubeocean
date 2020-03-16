@@ -83,6 +83,8 @@ func ServersRun(cmd string, hosts []Host) {
 func ServersPush(src, dst string, hosts []Host) {
 	result := make(chan Result)
 	ccons := make(chan struct{}, DefaultCon)
+	defer close(result)
+	defer close(ccons)
 	hostNum := len(hosts)
 	wg := &sync.WaitGroup{}
 
