@@ -75,7 +75,7 @@ func InstallDocker(nodes *cluster.AllNodes) {
 			wg.Add(1)
 			go func(host *cluster.ClusterNodeCfg, rs chan string) {
 				if err := host.CmdExec(dockerCheckCmd); err != nil {
-					ssh.CmdExec(node.Node.Address, node.Node.User, node.Node.Port, node.Node.Password, true, "", installDockerCmd)
+					ssh.CmdExec(host.Node.Address, host.Node.User, host.Node.Port, host.Node.Password, true, "", installDockerCmd)
 				} else {
 					log.Infof("Docker already exists. [%s]", host.Node.InternalAddress)
 				}
