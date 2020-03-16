@@ -37,6 +37,8 @@ func OverrideHostname(nodes *cluster.AllNodes) {
 		result := make(chan string)
 		ccons := make(chan struct{}, ssh.DefaultCon)
 		hostNum := len(nodes.Hosts)
+		defer close(result)
+		defer close(ccons)
 		wg := &sync.WaitGroup{}
 		go ssh.CheckResults(result, hostNum, wg, ccons)
 		for _, node := range nodes.Hosts {
