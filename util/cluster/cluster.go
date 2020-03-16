@@ -316,3 +316,34 @@ func (host *ClusterNodeCfg) CmdExecOut(cmd string) (string, error) {
 	}
 	return out, nil
 }
+
+func (nodes *AllNodes) GoExec(cmd string) {
+	hosts := []ssh.Host{}
+	for _, node := range nodes.Hosts {
+		host := ssh.Host{
+			Ip:           node.Node.Address,
+			Port:         node.Node.Port,
+			User:         node.Node.User,
+			Psw:          node.Node.Password,
+			PrivilegeCmd: node.PrivilegeCmd,
+		}
+		hosts = append(hosts, host)
+	}
+
+	ssh.ServersRun(cmd, hosts)
+}
+
+func (nodes *AllNodes) GoPush(src, dst string) {
+	hosts := []ssh.Host{}
+	for _, node := range nodes.Hosts {
+		host := ssh.Host{
+			Ip:   node.Node.Address,
+			Port: node.Node.Port,
+			User: node.Node.User,
+			Psw:  node.Node.Password,
+		}
+		hosts = append(hosts, host)
+	}
+
+	ssh.ServersPush(src, dst, hosts)
+}

@@ -20,10 +20,20 @@ var (
 )
 
 const (
-	NO_EXIST = "0"
-	IS_FILE  = "1"
-	IS_DIR   = "2"
+	NO_EXIST   = "0"
+	IS_FILE    = "1"
+	IS_DIR     = "2"
+	DefaultCon = 10
+	Timeout    = 600
 )
+
+type Host struct {
+	Ip           string
+	Port         string
+	User         string
+	Psw          string
+	PrivilegeCmd string
+}
 
 type CommonUser struct {
 	user  string
@@ -108,6 +118,12 @@ func NewPullServer(ip, port, user, psw, action, file, rpath string, force bool) 
 		Force:      force,
 	}
 	return server
+}
+
+//run command for parallel
+func (server *Server) PRunCmd(crs chan Result) {
+	rs := server.SRunCmd()
+	crs <- rs
 }
 
 // set Server.Cmd
@@ -399,4 +415,20 @@ func (server *Server) PullScp() (err error) {
 	scp := NewScp(client)
 	err = scp.PullFile(dst, src)
 	return err
+}
+
+//PRunScp() can transport  file or path to remote host
+func (server *Server) PRunScp(crs chan Result) {
+	cmd := "push " + server.FileName + " to " + server.Ip + ":" + server.RemotePath
+	rs := Result{
+		Ip:  server.Ip,
+		Cmd: cmd,
+	}
+	result := server.RunScpDir()
+	if result != nil {
+		rs.Err = result
+	} else {
+		rs.Result = cmd + " ok\n"
+	}
+	crs <- rs
 }

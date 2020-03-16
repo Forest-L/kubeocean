@@ -4,8 +4,10 @@ import (
 	"github.com/pixiake/kubeocean/install"
 	"github.com/pixiake/kubeocean/scale"
 	"github.com/pixiake/kubeocean/util/cluster"
+	"github.com/pixiake/kubeocean/util/ssh"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"sync"
 )
 
 func NewCmdCreateCluster() *cobra.Command {
@@ -50,11 +52,11 @@ func createAllinone(cfg *cluster.ClusterCfg) {
 	install.GenerateBootStrapScript(cfg)
 	install.InstallFilesDownload(cfg)
 	install.GenerateKubeletService()
-	install.BootStrapOS(&nodes.Hosts[0])
-	install.OverrideHostname(&nodes.Hosts[0])
-	install.InstallDocker(&nodes.Hosts[0])
-	install.GetKubeBinary(cfg, &nodes.Hosts[0])
-	install.SetKubeletService(&nodes.Hosts[0])
+	install.BootStrapOS(&nodes)
+	install.OverrideHostname(&nodes)
+	install.InstallDocker(&nodes)
+	install.GetKubeBinary(cfg, &nodes)
+	install.SetKubeletService(&nodes)
 	log.Info("Init Cluster")
 	install.InitCluster(cfg, &nodes.Hosts[0])
 	install.RemoveMasterTaint(&nodes.Hosts[0])
@@ -67,30 +69,44 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 	install.GenerateBootStrapScript(cfg)
 	install.InstallFilesDownload(cfg)
 	install.GenerateKubeletService()
-	for _, node := range allNodes.Hosts {
-		install.BootStrapOS(&node)
-		install.OverrideHostname(&node)
-		install.InstallDocker(&node)
-		install.GetKubeBinary(cfg, &node)
-		install.SetKubeletService(&node)
-	}
+	install.BootStrapOS(allNodes)
+	install.OverrideHostname(allNodes)
+	install.InstallDocker(allNodes)
+	install.GetKubeBinary(cfg, allNodes)
+	install.SetKubeletService(allNodes)
 
 	log.Info("Init Cluster")
 	install.InitCluster(cfg, &masterNodes.Hosts[0])
 
 	if len(k8sNodes.Hosts) > 1 {
+		log.Infof("Join Masters")
 		joinMasterCmd, joinWorkerCmd := scale.GetJoinCmd(&masterNodes.Hosts[0])
+
+		result := make(chan string)
+		ccons := make(chan struct{}, ssh.DefaultCon)
+		masterNum := len(masterNodes.Hosts) - 1
+		wg := &sync.WaitGroup{}
+		go ssh.CheckResults(result, masterNum, wg, ccons)
+
 		for index, master := range masterNodes.Hosts {
 			if index != 0 {
-				scale.JoinMaster(&master, joinMasterCmd)
-				if master.IsWorker {
-					install.RemoveMasterTaint(&master)
-				}
+				go func(joinMasterCmd string, master *cluster.ClusterNodeCfg, rs chan string) {
+					scale.JoinMaster(master, joinMasterCmd)
+					if master.IsWorker {
+						install.RemoveMasterTaint(master)
+					}
+					rs <- "ok"
+				}(joinMasterCmd, &master, result)
 			}
 		}
+
+		workerNum := len(workerNodes.Hosts)
+		go ssh.CheckResults(result, workerNum, wg, ccons)
 		for _, worker := range workerNodes.Hosts {
 			if worker.IsMaster != true {
-				scale.JoinWorker(&worker, joinWorkerCmd)
+				go func(joinWorkerCmd string, worker *cluster.ClusterNodeCfg, rs chan string) {
+					scale.JoinWorker(worker, joinWorkerCmd)
+				}(joinWorkerCmd, &worker, result)
 			}
 		}
 	}

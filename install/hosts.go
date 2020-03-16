@@ -5,26 +5,77 @@ import (
 	"github.com/pixiake/kubeocean/util/cluster"
 	"github.com/pixiake/kubeocean/util/ssh"
 	log "github.com/sirupsen/logrus"
-	"os"
 	"os/exec"
+	"sync"
 )
 
-func InstallDocker(node *cluster.ClusterNodeCfg) {
-	installDockerCmd := "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh"
-	if node.Node.Address == "" && CheckDocker(node) == false {
-		log.Infof("Docker being installed ...")
-		if output, err := exec.Command("/bin/sh", "-c", "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh").CombinedOutput(); err != nil {
-			log.Fatal("Install Docker Failed:\n")
-			fmt.Println(output)
+func BootStrapOS(nodes *cluster.AllNodes) {
+	src := "/tmp/kubeocean/bootStrapScript.sh"
+	dst := "/tmp/kubeocean"
+	if nodes.Hosts[0].Node.InternalAddress == "" {
+		log.Info("BootStrapOS")
+		if err := exec.Command(src).Run(); err != nil {
+			log.Errorf("Bootstrap is Failed: %v", err)
 		}
 	} else {
-		if CheckDocker(node) == false {
-			log.Infof("Docker being installed... [%s]", node.Node.Address)
-			err := ssh.CmdExec(node.Node.Address, node.Node.User, node.Node.Port, node.Node.Password, false, "", installDockerCmd)
-			if err != nil {
-				log.Fatalf("Install Docker Failed [%s]:\n", node.Node.Address)
-				os.Exit(1)
+		log.Info("BootStrapOS")
+		nodes.GoExec("mkdir -p /tmp/kubeocean -m 777")
+		nodes.GoPush(src, dst)
+		nodes.GoExec(src)
+	}
+}
+
+func OverrideHostname(nodes *cluster.AllNodes) {
+	if nodes.Hosts[0].Node.InternalAddress == "" {
+		log.Info("Override Hostname")
+		err := exec.Command("/bin/sh", "-c", fmt.Sprintf("hostnamectl set-hostname %s", cluster.DefaultHostName)).Run()
+		if err != nil {
+			log.Fatalf("Failed to Override Hostname: %v", err)
+		}
+	} else {
+		log.Infof("Override Hostname")
+		result := make(chan string)
+		ccons := make(chan struct{}, ssh.DefaultCon)
+		hostNum := len(nodes.Hosts)
+		wg := &sync.WaitGroup{}
+		go ssh.CheckResults(result, hostNum, wg, ccons)
+		for _, node := range nodes.Hosts {
+			cmd := fmt.Sprintf("hostnamectl set-hostname %s", node.Node.HostName)
+			go func(rs chan string, cmd string) {
+				node.CmdExec(cmd)
+				rs <- "ok"
+			}(result, cmd)
+		}
+
+	}
+}
+
+func InstallDocker(nodes *cluster.AllNodes) {
+	installDockerCmd := "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh"
+	if nodes.Hosts[0].Node.InternalAddress == "" {
+		node := cluster.ClusterNodeCfg{}
+		if CheckDocker(&node) == false {
+			log.Infof("Docker being installed ...")
+			if output, err := exec.Command("/bin/sh", "-c", "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh").CombinedOutput(); err != nil {
+				log.Fatal("Install Docker Failed:\n")
+				fmt.Println(output)
 			}
+		}
+	} else {
+		log.Infof("Docker being installed")
+		result := make(chan string)
+		ccons := make(chan struct{}, ssh.DefaultCon)
+		hostNum := len(nodes.Hosts)
+		wg := &sync.WaitGroup{}
+		go ssh.CheckResults(result, hostNum, wg, ccons)
+
+		for _, node := range nodes.Hosts {
+			go func(rs chan string) {
+				if CheckDocker(&node) == false {
+					ssh.CmdExec(node.Node.Address, node.Node.User, node.Node.Port, node.Node.Password, false, "", installDockerCmd)
+				}
+				rs <- "ok"
+			}(result)
 		}
 	}
 }
@@ -48,27 +99,7 @@ func CheckDocker(host *cluster.ClusterNodeCfg) bool {
 	}
 }
 
-func BootStrapOS(node *cluster.ClusterNodeCfg) {
-	src := "/tmp/kubeocean/bootStrapScript.sh"
-	dst := "/tmp/kubeocean"
-
-	if node.Node.Address == "" {
-		log.Info("BootStrapOS")
-		if err := exec.Command(src).Run(); err != nil {
-			log.Errorf("Bootstrap is Failed: %v", err)
-		}
-	} else {
-		log.Infof("BootStrapOS [%s]", node.Node.InternalAddress)
-		node.CmdExec("mkdir -p /tmp/kubeocean -m 777")
-		ssh.PushFile(node.Node.Address, src, dst, node.Node.User, node.Node.Port, node.Node.Password, true)
-		if out, err := node.CmdExecOut(src); err != nil {
-			fmt.Println(out)
-			log.Fatalf("Bootstrap is Failed [%s]:\n", node.Node.Address)
-		}
-	}
-}
-
-func GetKubeBinary(cfg *cluster.ClusterCfg, node *cluster.ClusterNodeCfg) {
+func GetKubeBinary(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 	var kubeVersion string
 	if cfg.KubeVersion == "" {
 		kubeVersion = cluster.DefaultKubeVersion
@@ -84,7 +115,7 @@ func GetKubeBinary(cfg *cluster.ClusterCfg, node *cluster.ClusterNodeCfg) {
 	getKubectlCmd := fmt.Sprintf("cp -f /tmp/kubeocean/%s /usr/local/bin/kubectl", kubectlFile)
 	getKubeCniCmd := fmt.Sprintf("tar -zxf /tmp/kubeocean/%s -C /opt/cni/bin", kubeCniFile)
 
-	if node.Node.Address == "" {
+	if nodes.Hosts[0].Node.InternalAddress == "" {
 		log.Info("Get Kube Binary Files")
 		if err := exec.Command("/bin/sh", "-c", getKubeadmCmd).Run(); err != nil {
 			log.Errorf("Failed to get kubeadm: %v", err)
@@ -108,60 +139,40 @@ func GetKubeBinary(cfg *cluster.ClusterCfg, node *cluster.ClusterNodeCfg) {
 		}
 
 	} else {
-		log.Info("Get Kube Binary Files [%s]", node.Node.InternalAddress)
-		ssh.PushFile(node.Node.Address, fmt.Sprintf("/tmp/kubeocean/%s", kubeadmFile), "/tmp/kubeocean", node.Node.User, node.Node.Port, node.Node.Password, true)
-		if err := node.CmdExec(getKubeadmCmd); err != nil {
-			log.Fatalf("Failed to get kubeadm [%s]:\n", node.Node.Address)
-		}
-		node.CmdExec("chmod +x /usr/local/bin/kubeadm")
+		log.Info("Get Kube Binary Files")
+		nodes.GoPush(fmt.Sprintf("/tmp/kubeocean/%s", kubeadmFile), "/tmp/kubeocean")
+		nodes.GoExec(getKubeadmCmd)
+		nodes.GoExec("chmod +x /usr/local/bin/kubeadm")
 
-		ssh.PushFile(node.Node.Address, fmt.Sprintf("/tmp/kubeocean/%s", kubeletFile), "/tmp/kubeocean", node.Node.User, node.Node.Port, node.Node.Password, true)
-		if err := node.CmdExec(getKubeletCmd); err != nil {
-			log.Fatalf("Failed to get kubelet [%s]:\n", node.Node.Address)
-		}
-		node.CmdExec("chmod +x /usr/local/bin/kubelet")
-		node.CmdExec("ln -s /usr/local/bin/kubelet /usr/bin/kubelet")
+		nodes.GoPush(fmt.Sprintf("/tmp/kubeocean/%s", kubeletFile), "/tmp/kubeocean")
+		nodes.GoExec(getKubeletCmd)
+		nodes.GoExec("chmod +x /usr/local/bin/kubelet")
+		nodes.GoExec("ln -s /usr/local/bin/kubelet /usr/bin/kubelet")
 
-		ssh.PushFile(node.Node.Address, fmt.Sprintf("/tmp/kubeocean/%s", kubectlFile), "/tmp/kubeocean", node.Node.User, node.Node.Port, node.Node.Password, true)
-		if err := node.CmdExec(getKubectlCmd); err != nil {
-			log.Fatalf("Failed to get kubectl [%s]:\n", node.Node.Address)
-		}
-		node.CmdExec("chmod +x /usr/local/bin/kubectl")
+		nodes.GoPush(fmt.Sprintf("/tmp/kubeocean/%s", kubectlFile), "/tmp/kubeocean")
+		nodes.GoExec(getKubectlCmd)
+		nodes.GoExec("chmod +x /usr/local/bin/kubectl")
 
-		ssh.PushFile(node.Node.Address, fmt.Sprintf("/tmp/kubeocean/%s", kubeCniFile), "/tmp/kubeocean", node.Node.User, node.Node.Port, node.Node.Password, true)
-		node.CmdExec("mkdir -p /opt/cni/bin")
-		if err := node.CmdExec(getKubeCniCmd); err != nil {
-			log.Fatalf("Failed to get kubecni [%s]:\n", node.Node.Address)
-		}
+		nodes.GoPush(fmt.Sprintf("/tmp/kubeocean/%s", kubeCniFile), "/tmp/kubeocean")
+
+		nodes.GoExec("mkdir -p /opt/cni/bin")
+		nodes.GoExec(getKubeCniCmd)
 	}
 }
 
-func SetKubeletService(node *cluster.ClusterNodeCfg) {
+func SetKubeletService(nodes *cluster.AllNodes) {
 
-	if node.Node.Address == "" {
+	if nodes.Hosts[0].Node.InternalAddress == "" {
 		log.Info("Set Kubelet Service")
 		exec.Command("/bin/sh", "-c", "mkdir -p /etc/systemd/system/kubelet.service.d").Run()
 		exec.Command("/bin/sh", "-c", "cp -f /tmp/kubeocean/kubelet.service /etc/systemd/system").Run()
 		exec.Command("/bin/sh", "-c", "cp -f /tmp/kubeocean/10-kubeadm.conf /etc/systemd/system/kubelet.service.d").Run()
 	} else {
-		log.Info("Set Kubelet Service [%s]", node.Node.InternalAddress)
-		node.CmdExec("mkdir -p /etc/systemd/system/kubelet.service.d")
-		ssh.PushFile(node.Node.Address, "/tmp/kubeocean/kubelet.service", "/tmp/kubeocean", node.Node.User, node.Node.Port, node.Node.Password, true)
-		ssh.PushFile(node.Node.Address, "/tmp/kubeocean/10-kubeadm.conf", "/tmp/kubeocean", node.Node.User, node.Node.Port, node.Node.Password, true)
-		node.CmdExec(fmt.Sprintf("cp -f /tmp/kubeocean/kubelet.service /etc/systemd/system"))
-		node.CmdExec(fmt.Sprintf("cp -f /tmp/kubeocean/10-kubeadm.conf /etc/systemd/system/kubelet.service.d"))
-	}
-}
-
-func OverrideHostname(node *cluster.ClusterNodeCfg) {
-	if node.Node.Address == "" {
-		log.Info("Override Hostname")
-		err := exec.Command("/bin/sh", "-c", fmt.Sprintf("hostnamectl set-hostname %s", cluster.DefaultHostName)).Run()
-		if err != nil {
-			log.Fatalf("Failed to Override Hostname: %v", err)
-		}
-	} else {
-		log.Infof("Override Hostname [%s]", node.Node.InternalAddress)
-		node.CmdExec(fmt.Sprintf("hostnamectl set-hostname %s", node.Node.HostName))
+		log.Info("Set Kubelet Service")
+		nodes.GoExec("mkdir -p /etc/systemd/system/kubelet.service.d")
+		nodes.GoPush("/tmp/kubeocean/kubelet.service", "/tmp/kubeocean")
+		nodes.GoPush("/tmp/kubeocean/10-kubeadm.conf", "/tmp/kubeocean")
+		nodes.GoExec(fmt.Sprintf("cp -f /tmp/kubeocean/kubelet.service /etc/systemd/system"))
+		nodes.GoExec(fmt.Sprintf("cp -f /tmp/kubeocean/10-kubeadm.conf /etc/systemd/system/kubelet.service.d"))
 	}
 }

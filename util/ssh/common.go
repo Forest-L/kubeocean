@@ -4,19 +4,20 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
+	"time"
 )
 
 func PrintExecResult(res Result) {
-	fmt.Printf("ip=%s\n", res.Ip)
-	fmt.Printf("command=%s\n", res.Cmd)
+	fmt.Printf("[%s]  %s\n", res.Ip, res.Cmd)
 	if res.Err != nil {
 		fmt.Printf("return=1\n")
-		fmt.Printf("%s\n", res.Err)
+		fmt.Printf("[Error] %s\n", res.Err)
+		fmt.Printf("%s\n", res.Result)
 	} else {
 		fmt.Printf("return=0\n")
-		fmt.Printf("%s\n", res.Result)
 	}
-	fmt.Println("----------------------------------------------------------")
+	//fmt.Println("----------------------------------------------------------")
 }
 
 //print pull result
@@ -31,6 +32,32 @@ func PrintPullResult(ip, src, dst string, err error) {
 		fmt.Printf("Pull from %s to %s ok.\n", dst, src)
 	}
 	fmt.Println("----------------------------------------------------------")
+}
+
+func PrintResults(crs chan Result, ls int, wt *sync.WaitGroup, ccons chan struct{}) {
+	for i := 0; i < ls; i++ {
+		select {
+		case rs := <-crs:
+			PrintExecResult(rs)
+		case <-time.After(time.Second * Timeout):
+			fmt.Printf("getSSHClient error,SSH-Read-TimeOut,Timeout=%ds", Timeout)
+		}
+		wt.Done()
+		<-ccons
+	}
+}
+
+func CheckResults(crs chan string, ls int, wt *sync.WaitGroup, ccons chan struct{}) {
+	for i := 0; i < ls; i++ {
+		select {
+		case <-crs:
+			//fmt.Println(rs)
+		case <-time.After(time.Second * Timeout):
+			fmt.Printf("getSSHClient error,SSH-Read-TimeOut,Timeout=%ds", Timeout)
+		}
+		wt.Done()
+		<-ccons
+	}
 }
 
 //check path is exit
