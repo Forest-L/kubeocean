@@ -54,6 +54,7 @@ func scaleCluster(clusterCfgFile string) {
 	go ssh.CheckResults(result, masterNum, wg, ccons)
 
 	for _, node := range newNodes.Hosts {
+		wg.Add(1)
 		go func(joinMasterCmd, joinWorkerCmd string, node *cluster.ClusterNodeCfg, rs chan string) {
 			if node.IsMaster {
 				scale.JoinMaster(node, joinMasterCmd)
@@ -67,8 +68,8 @@ func scaleCluster(clusterCfgFile string) {
 			}
 			rs <- "ok"
 		}(joinMasterCmd, joinWorkerCmd, &node, result)
-
 	}
+	wg.Wait()
 }
 
 func getClusterStatusInfo(masters *cluster.MasterNodes) (string, string, string) {

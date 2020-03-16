@@ -76,6 +76,7 @@ func ServersRun(cmd string, hosts []Host) {
 		wg.Add(1)
 		go server.PRunCmd(result)
 	}
+	wg.Wait()
 }
 
 //push file or dir to remote servers
@@ -93,4 +94,5 @@ func ServersPush(src, dst string, hosts []Host) {
 		wg.Add(1)
 		go server.PRunScp(result)
 	}
+	wg.Wait()
 }
