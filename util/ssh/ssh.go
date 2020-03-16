@@ -23,7 +23,7 @@ const (
 	NO_EXIST   = "0"
 	IS_FILE    = "1"
 	IS_DIR     = "2"
-	DefaultCon = 10
+	DefaultCon = 5
 	Timeout    = 600
 )
 
