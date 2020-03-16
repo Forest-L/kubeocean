@@ -4,9 +4,11 @@ import (
 	"github.com/pixiake/kubeocean/install"
 	"github.com/pixiake/kubeocean/scale"
 	"github.com/pixiake/kubeocean/util/cluster"
+	"github.com/pixiake/kubeocean/util/ssh"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"strings"
+	"sync"
 )
 
 func NewCmdScaleCluster() *cobra.Command {
@@ -38,24 +40,34 @@ func scaleCluster(clusterCfgFile string) {
 	install.GenerateBootStrapScript(cfg)
 	install.InstallFilesDownload(cfg)
 	install.GenerateKubeletService()
-	for _, node := range allNodes.Hosts {
-		install.BootStrapOS(&node)
-	}
-	for _, node := range NewNodes(clusterStatusInfo, allNodes) {
-		install.OverrideHostname(&node)
-		install.InstallDocker(&node)
-		install.GetKubeBinary(cfg, &node)
-		install.SetKubeletService(&node)
-		if node.IsMaster {
-			scale.JoinMaster(&node, joinMasterCmd)
-			if node.IsWorker {
-				install.RemoveMasterTaint(&node)
+	install.BootStrapOS(allNodes)
+	newNodes := NewNodes(clusterStatusInfo, allNodes)
+	install.OverrideHostname(&newNodes)
+	install.InstallDocker(&newNodes)
+	install.GetKubeBinary(cfg, &newNodes)
+	install.SetKubeletService(&newNodes)
+
+	result := make(chan string)
+	ccons := make(chan struct{}, ssh.DefaultCon)
+	masterNum := len(masterNodes.Hosts) - 1
+	wg := &sync.WaitGroup{}
+	go ssh.CheckResults(result, masterNum, wg, ccons)
+
+	for _, node := range newNodes.Hosts {
+		go func(joinMasterCmd, joinWorkerCmd string, node *cluster.ClusterNodeCfg, rs chan string) {
+			if node.IsMaster {
+				scale.JoinMaster(node, joinMasterCmd)
+				if node.IsWorker {
+					install.RemoveMasterTaint(node)
+				}
+			} else {
+				if node.IsWorker {
+					scale.JoinWorker(node, joinWorkerCmd)
+				}
 			}
-		} else {
-			if node.IsWorker {
-				scale.JoinWorker(&node, joinWorkerCmd)
-			}
-		}
+			rs <- "ok"
+		}(joinMasterCmd, joinWorkerCmd, &node, result)
+
 	}
 }
 
@@ -75,11 +87,11 @@ func getClusterStatusInfo(masters *cluster.MasterNodes) (string, string, string)
 	return "", "", ""
 }
 
-func NewNodes(clusterStatusInfo string, nodes *cluster.AllNodes) []cluster.ClusterNodeCfg {
-	newNodes := []cluster.ClusterNodeCfg{}
+func NewNodes(clusterStatusInfo string, nodes *cluster.AllNodes) cluster.AllNodes {
+	newNodes := cluster.AllNodes{}
 	for _, node := range nodes.Hosts {
 		if strings.Contains(clusterStatusInfo, node.Node.HostName) == false && strings.Contains(clusterStatusInfo, node.Node.InternalAddress) == false && (node.IsMaster || node.IsWorker) {
-			newNodes = append(newNodes, node)
+			newNodes.Hosts = append(newNodes.Hosts, node)
 		}
 	}
 	return newNodes
