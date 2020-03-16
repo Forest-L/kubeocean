@@ -76,7 +76,7 @@ func InstallDocker(nodes *cluster.AllNodes) {
 			wg.Add(1)
 			go func(node *cluster.ClusterNodeCfg, rs chan string) {
 				if CheckDocker(node) == false {
-					ssh.CmdExec(node.Node.Address, node.Node.User, node.Node.Port, node.Node.Password, false, "", installDockerCmd)
+					ssh.CmdExec(node.Node.Address, node.Node.User, node.Node.Port, node.Node.Password, true, "", installDockerCmd)
 				}
 				rs <- "ok"
 			}(&node, result)
