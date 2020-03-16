@@ -9,13 +9,11 @@ import (
 )
 
 func PrintExecResult(res Result) {
-	fmt.Printf("[%s]  %s\n", res.Ip, res.Cmd)
 	if res.Err != nil {
-		fmt.Printf("return=1\n")
-		fmt.Printf("[Error] %s\n", res.Err)
-		fmt.Printf("%s\n", res.Result)
+		fmt.Printf("[%s]  %s  %s\n", res.Ip, res.Cmd, "return: 1")
+		fmt.Printf("[Error]  %s\n", res.Err)
 	} else {
-		fmt.Printf("return=0\n")
+		fmt.Printf("[%s]  %s  %s\n", res.Ip, res.Cmd, "return: 0")
 	}
 	//fmt.Println("----------------------------------------------------------")
 }

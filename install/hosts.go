@@ -74,12 +74,12 @@ func InstallDocker(nodes *cluster.AllNodes) {
 		for _, node := range nodes.Hosts {
 			ccons <- struct{}{}
 			wg.Add(1)
-			go func(rs chan string) {
-				if CheckDocker(&node) == false {
+			go func(node *cluster.ClusterNodeCfg, rs chan string) {
+				if CheckDocker(node) == false {
 					ssh.CmdExec(node.Node.Address, node.Node.User, node.Node.Port, node.Node.Password, false, "", installDockerCmd)
 				}
 				rs <- "ok"
-			}(result)
+			}(&node, result)
 		}
 		wg.Wait()
 	}
