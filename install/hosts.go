@@ -53,14 +53,13 @@ func OverrideHostname(nodes *cluster.AllNodes) {
 }
 
 func InstallDocker(nodes *cluster.AllNodes) {
+	dockerCheckCmd := "which docker"
 	installDockerCmd := "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh"
 	if nodes.Hosts[0].Node.InternalAddress == "" {
-		node := cluster.ClusterNodeCfg{}
-		if CheckDocker(&node) == false {
+		if err := exec.Command("which", "docker").Run(); err != nil {
 			log.Infof("Docker being installed ...")
-			if output, err := exec.Command("/bin/sh", "-c", "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh").CombinedOutput(); err != nil {
+			if err := exec.Command("/bin/sh", "-c", "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh").Run(); err != nil {
 				log.Fatal("Install Docker Failed:\n")
-				fmt.Println(output)
 			}
 		}
 	} else {
@@ -75,32 +74,13 @@ func InstallDocker(nodes *cluster.AllNodes) {
 			ccons <- struct{}{}
 			wg.Add(1)
 			go func(node *cluster.ClusterNodeCfg, rs chan string) {
-				if CheckDocker(node) == false {
+				if err := node.CmdExec(dockerCheckCmd); err != nil {
 					ssh.CmdExec(node.Node.Address, node.Node.User, node.Node.Port, node.Node.Password, true, "", installDockerCmd)
 				}
 				rs <- "ok"
 			}(&node, result)
 		}
 		wg.Wait()
-	}
-}
-
-func CheckDocker(host *cluster.ClusterNodeCfg) bool {
-	dockerCheckCmd := "which docker"
-	if host.Node.InternalAddress == "" {
-		if err := exec.Command("which", "docker").Run(); err != nil {
-			return false
-		} else {
-			log.Info("Docker already exists.")
-			return true
-		}
-	} else {
-		if err := host.CmdExec(dockerCheckCmd); err != nil {
-			return false
-		} else {
-			log.Infof("Docker already exists. (%s)", host.Node.Address)
-			return true
-		}
 	}
 }
 
