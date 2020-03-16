@@ -45,7 +45,7 @@ func OverrideHostname(nodes *cluster.AllNodes) {
 			cmd := fmt.Sprintf("hostnamectl set-hostname %s", node.Node.HostName)
 			go func(rs chan string, cmd string) {
 				node.CmdExec(cmd)
-				rs <- "ok"
+				rs <- cmd
 			}(result, cmd)
 		}
 		wg.Wait()
