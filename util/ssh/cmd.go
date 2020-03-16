@@ -71,8 +71,8 @@ func ServersRun(cmd string, hosts []Host) {
 
 	for _, h := range hosts {
 		ccons <- struct{}{}
-		cmd = fmt.Sprintf("%s\"%s\"", h.PrivilegeCmd, cmd)
-		server := NewCmdServer(h.Ip, h.Port, h.User, h.Psw, "cmd", cmd, true)
+		cmds := fmt.Sprintf("%s\"%s\"", h.PrivilegeCmd, cmd)
+		server := NewCmdServer(h.Ip, h.Port, h.User, h.Psw, "cmd", cmds, true)
 		wg.Add(1)
 		go server.PRunCmd(result)
 	}
