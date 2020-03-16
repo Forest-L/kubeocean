@@ -67,6 +67,8 @@ func InstallDocker(nodes *cluster.AllNodes) {
 		rs := make(chan string)
 		cn := make(chan struct{}, ssh.DefaultCon)
 		hostNum := len(nodes.Hosts)
+		defer close(rs)
+		defer close(cn)
 		wg := &sync.WaitGroup{}
 		go ssh.CheckResults(rs, hostNum, wg, cn)
 
