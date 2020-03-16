@@ -81,7 +81,7 @@ func InstallDocker(nodes *cluster.AllNodes) {
 				} else {
 					log.Infof("Docker already exists. [%s]", host.Node.InternalAddress)
 				}
-				rs <- "ok"
+				rs <- node.Node.InternalAddress
 			}(&node, rs)
 			fmt.Println(node.Node.InternalAddress)
 		}
