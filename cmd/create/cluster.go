@@ -90,6 +90,7 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 
 		for index, master := range masterNodes.Hosts {
 			if index != 0 {
+				ccons <- struct{}{}
 				wg.Add(1)
 				go func(joinMasterCmd string, master *cluster.ClusterNodeCfg, rs chan string) {
 					scale.JoinMaster(master, joinMasterCmd)
@@ -105,12 +106,14 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 		workerNum := len(workerNodes.Hosts)
 		go ssh.CheckResults(result, workerNum, wg, ccons)
 		for _, worker := range workerNodes.Hosts {
-			if worker.IsMaster != true {
-				wg.Add(1)
-				go func(joinWorkerCmd string, worker *cluster.ClusterNodeCfg, rs chan string) {
+			ccons <- struct{}{}
+			wg.Add(1)
+			go func(joinWorkerCmd string, worker *cluster.ClusterNodeCfg, rs chan string) {
+				if worker.IsMaster != true {
 					scale.JoinWorker(worker, joinWorkerCmd)
-				}(joinWorkerCmd, &worker, result)
-			}
+				}
+				rs <- "ok"
+			}(joinWorkerCmd, &worker, result)
 		}
 		wg.Wait()
 	}

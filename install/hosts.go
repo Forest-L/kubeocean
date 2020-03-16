@@ -40,6 +40,7 @@ func OverrideHostname(nodes *cluster.AllNodes) {
 		wg := &sync.WaitGroup{}
 		go ssh.CheckResults(result, hostNum, wg, ccons)
 		for _, node := range nodes.Hosts {
+			ccons <- struct{}{}
 			wg.Add(1)
 			cmd := fmt.Sprintf("hostnamectl set-hostname %s", node.Node.HostName)
 			go func(rs chan string, cmd string) {
@@ -71,6 +72,7 @@ func InstallDocker(nodes *cluster.AllNodes) {
 		go ssh.CheckResults(result, hostNum, wg, ccons)
 
 		for _, node := range nodes.Hosts {
+			ccons <- struct{}{}
 			wg.Add(1)
 			go func(rs chan string) {
 				if CheckDocker(&node) == false {
