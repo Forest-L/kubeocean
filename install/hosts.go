@@ -71,9 +71,11 @@ func InstallDocker(nodes *cluster.AllNodes) {
 		go ssh.CheckResults(result, hostNum, wg, ccons)
 
 		for _, node := range nodes.Hosts {
+			fmt.Println(node.Node.InternalAddress)
 			ccons <- struct{}{}
 			wg.Add(1)
 			go func(host *cluster.ClusterNodeCfg, rs chan string) {
+				fmt.Println(host.Node.InternalAddress)
 				if err := host.CmdExec(dockerCheckCmd); err != nil {
 					ssh.CmdExec(host.Node.Address, host.Node.User, host.Node.Port, host.Node.Password, true, "", installDockerCmd)
 				} else {
