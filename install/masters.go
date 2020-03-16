@@ -38,7 +38,7 @@ func InitCluster(cfg *cluster.ClusterCfg, master *cluster.ClusterNodeCfg) {
 		master.CmdExec("cp -f /tmp/kubeocean/kubeadm-config.yaml /etc/kubernetes")
 		initClusterCmd := "/usr/local/bin/kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml"
 		if err := master.CmdExec(initClusterCmd); err != nil {
-			log.Fatalf("Failed to init cluster (%s):\n", master.Node.Address)
+			log.Fatalf("Failed to init cluster (%s):\n%v", master.Node.Address, err)
 		}
 
 		GetKubeConfig(master)
