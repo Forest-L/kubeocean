@@ -71,7 +71,6 @@ func InstallDocker(nodes *cluster.AllNodes) {
 		go ssh.CheckResults(result, hostNum, wg, ccons)
 
 		for _, node := range nodes.Hosts {
-			fmt.Println(node.Node.InternalAddress)
 			ccons <- struct{}{}
 			wg.Add(1)
 			go func(host *cluster.ClusterNodeCfg, rs chan string) {
@@ -83,6 +82,7 @@ func InstallDocker(nodes *cluster.AllNodes) {
 				}
 				rs <- "ok"
 			}(&node, result)
+			fmt.Println(node.Node.InternalAddress)
 		}
 		wg.Wait()
 	}
