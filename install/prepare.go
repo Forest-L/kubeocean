@@ -93,6 +93,7 @@ func GenerateNetworkCfg(cfg *cluster.ClusterCfg) {
 }
 
 func Prepare(cfg *cluster.ClusterCfg) {
+	exec.Command("mkdir -p /tmp/kubeocean -m 777").Run()
 	InstallFilesDownload(cfg)
 	GenerateBootStrapScript(cfg)
 	GenerateKubeadmCfg(cfg)
