@@ -68,7 +68,7 @@ func InstallFilesDownload(cfg *cluster.ClusterCfg) {
 	}
 
 	log.Info("Helm being download ...")
-	if util.IsExist(kubeCni) == false {
+	if util.IsExist(helm) == false {
 		if out, err := exec.Command("/bin/sh", "-c", getHelmCmd).CombinedOutput(); err != nil {
 			log.Errorf("Failed to get helm: %v", err)
 			fmt.Println(string(out))
