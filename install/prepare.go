@@ -93,7 +93,7 @@ func GenerateNetworkCfg(cfg *cluster.ClusterCfg) {
 }
 
 func Prepare(cfg *cluster.ClusterCfg) {
-	out, err := exec.Command("mkdir -p /tmp/kubeocean -m 777").CombinedOutput()
+	out, err := exec.Command("mkdir -p /tmp/kubeocean").CombinedOutput()
 	if err != nil {
 		fmt.Println(err)
 	}
