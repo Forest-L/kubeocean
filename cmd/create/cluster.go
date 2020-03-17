@@ -70,8 +70,8 @@ func createMultiNodes(cfg *cluster.ClusterCfg) {
 	install.InstallFilesDownload(cfg)
 	install.GenerateKubeletService()
 	install.InstallDocker(allNodes)
-	install.BootStrapOS(allNodes)
 	install.OverrideHostname(allNodes)
+	install.BootStrapOS(allNodes)
 	install.GetKubeBinary(cfg, allNodes)
 	install.SetKubeletService(allNodes)
 
