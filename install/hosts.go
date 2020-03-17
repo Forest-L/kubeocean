@@ -63,6 +63,7 @@ func InstallDocker(nodes *cluster.AllNodes) {
 			if err := exec.Command("/bin/sh", "-c", "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh").Run(); err != nil {
 				log.Fatal("Install Docker Failed:\n")
 			}
+			exec.Command("sh", "-c", "systemctl enable docker").Run()
 		}
 	} else {
 		log.Infof("Docker being installed")
@@ -83,6 +84,7 @@ func InstallDocker(nodes *cluster.AllNodes) {
 				installDockerCmd := "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh"
 				if err := host.CmdExec(dockerCheckCmd); err != nil {
 					ssh.CmdExec(host.Node.Address, host.Node.User, host.Node.Port, host.Node.Password, true, "", installDockerCmd)
+					host.CmdExec("systemctl enable docker")
 				} else {
 					log.Infof("Docker already exists. [%s]", host.Node.InternalAddress)
 				}
@@ -159,6 +161,11 @@ func GetKubeBinary(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 
 		nodes.GoExec("mkdir -p /opt/cni/bin")
 		nodes.GoExec(getKubeCniCmd)
+
+		nodes.GoPush(fmt.Sprintf("/tmp/kubeocean/%s", helmFile), "/tmp/kubeocean")
+		nodes.GoExec(getHelmCmd)
+		nodes.GoExec("chmod +x /usr/local/bin/helm")
+
 	}
 }
 
@@ -169,6 +176,7 @@ func SetKubeletService(nodes *cluster.AllNodes) {
 		exec.Command("/bin/sh", "-c", "mkdir -p /etc/systemd/system/kubelet.service.d").Run()
 		exec.Command("/bin/sh", "-c", "cp -f /tmp/kubeocean/kubelet.service /etc/systemd/system").Run()
 		exec.Command("/bin/sh", "-c", "cp -f /tmp/kubeocean/10-kubeadm.conf /etc/systemd/system/kubelet.service.d").Run()
+		exec.Command("/bin/sh", "-c", "systemctl enable kubelet").Run()
 	} else {
 		log.Info("Set Kubelet Service")
 		nodes.GoExec("mkdir -p /etc/systemd/system/kubelet.service.d")
@@ -176,5 +184,6 @@ func SetKubeletService(nodes *cluster.AllNodes) {
 		nodes.GoPush("/tmp/kubeocean/10-kubeadm.conf", "/tmp/kubeocean")
 		nodes.GoExec(fmt.Sprintf("cp -f /tmp/kubeocean/kubelet.service /etc/systemd/system"))
 		nodes.GoExec(fmt.Sprintf("cp -f /tmp/kubeocean/10-kubeadm.conf /etc/systemd/system/kubelet.service.d"))
+		nodes.GoExec("systemctl enable kubelet")
 	}
 }

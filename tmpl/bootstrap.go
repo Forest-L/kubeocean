@@ -25,8 +25,8 @@ sed -r -i  "s@#{0,}?net.ipv4.ip_local_reserved_ports ?= ?(0|1)@net.ipv4.ip_local
 
 awk ' !x[$0]++{print > "/etc/sysctl.conf"}' /etc/sysctl.conf
 
-systemctl stop firewald > /dev/null
-systemctl stop ufw > /dev/null
+systemctl stop firewald && systemctl disable firewald> /dev/null
+systemctl stop ufw && systemctl disable ufw > /dev/null
 
 modinfo br_netfilter > /dev/null 2>&1
 if [ $? -eq 0 ]; then
