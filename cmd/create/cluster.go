@@ -49,9 +49,7 @@ func createAllinone(cfg *cluster.ClusterCfg) {
 	nodeList := []cluster.ClusterNodeCfg{allinone}
 	nodes := cluster.AllNodes{nodeList}
 	log.Info("Install Files Download")
-	install.GenerateBootStrapScript(cfg)
-	install.InstallFilesDownload(cfg)
-	install.GenerateKubeletService()
+	install.Prepare(cfg)
 	install.BootStrapOS(&nodes)
 	install.OverrideHostname(&nodes)
 	install.InstallDocker(&nodes)
@@ -66,9 +64,7 @@ func createAllinone(cfg *cluster.ClusterCfg) {
 func createMultiNodes(cfg *cluster.ClusterCfg) {
 	allNodes, _, masterNodes, workerNodes, k8sNodes := cfg.GroupHosts()
 	log.Info("Install Files Download")
-	install.GenerateBootStrapScript(cfg)
-	install.InstallFilesDownload(cfg)
-	install.GenerateKubeletService()
+	install.Prepare(cfg)
 	install.InstallDocker(allNodes)
 	install.OverrideHostname(allNodes)
 	install.BootStrapOS(allNodes)

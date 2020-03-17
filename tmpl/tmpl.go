@@ -74,8 +74,8 @@ func GenerateKubeletFiles() {
 }
 
 func GenerateKubeadmFiles(cfg *cluster.ClusterCfg) {
-	dir := []string{"/etc/kubernetes"}
-	createDirectory(dir)
+	//dir := []string{"/etc/kubernetes"}
+	//createDirectory(dir)
 	kubeadmCfg := cfg.GenerateKubeadmCfg()
 
 	kubeadmCfgFile := File{Name: "/tmp/kubeocean/kubeadm-config.yaml", Pem: 0644, Tmpl: KubeadmCfgTempl}

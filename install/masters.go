@@ -9,13 +9,9 @@ import (
 	"os/exec"
 )
 
-func SetKubeadmCfg(cfg *cluster.ClusterCfg) {
-	tmpl.GenerateKubeadmFiles(cfg)
-}
-
 func InitCluster(cfg *cluster.ClusterCfg, master *cluster.ClusterNodeCfg) {
-	SetKubeadmCfg(cfg)
 	if master.Node.InternalAddress == "" {
+		exec.Command("sh", "-c", "mkdir -r /etc/kubernetes")
 		exec.Command("sh", "-c", "cp -f /tmp/kubeocean/kubeadm-config.yaml /etc/kubernetes").Run()
 		if out, err := exec.Command("sh", "-c", "/usr/local/bin/kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml").CombinedOutput(); err != nil {
 			log.Fatalf("Failed to init cluster:\n %v", string(out))
@@ -34,6 +30,7 @@ func InitCluster(cfg *cluster.ClusterCfg, master *cluster.ClusterNodeCfg) {
 		}
 
 	} else {
+		master.CmdExec("mkdir -p /etc/kubernetes")
 		ssh.PushFile(master.Node.Address, "/tmp/kubeocean/kubeadm-config.yaml", "/tmp/kubeocean", master.Node.User, master.Node.Port, master.Node.Password, true)
 		master.CmdExec("cp -f /tmp/kubeocean/kubeadm-config.yaml /etc/kubernetes")
 		initClusterCmd := "/usr/local/bin/kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml"
@@ -47,7 +44,6 @@ func InitCluster(cfg *cluster.ClusterCfg, master *cluster.ClusterNodeCfg) {
 			configFile = "/root/.kube/config"
 		}
 		ssh.PullFile(master.Node.Address, "/tmp/kubeocean", configFile, master.Node.User, master.Node.Port, master.Node.Password, true)
-		tmpl.GenerateNetworkPluginFiles(cfg)
 		deployNetworkPluginCmd := fmt.Sprintf("/usr/local/bin/kubectl apply -f /etc/kubernetes/%s.yaml", cfg.Network.Plugin)
 		if cfg.Network.Plugin == "calico" {
 			ssh.PushFile(master.Node.Address, "/tmp/kubeocean/calico.yaml", "/tmp/kubeocean", master.Node.User, master.Node.Port, master.Node.Password, true)

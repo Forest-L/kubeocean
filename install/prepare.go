@@ -83,3 +83,19 @@ func GenerateBootStrapScript(cfg *cluster.ClusterCfg) {
 func GenerateKubeletService() {
 	tmpl.GenerateKubeletFiles()
 }
+
+func GenerateKubeadmCfg(cfg *cluster.ClusterCfg) {
+	tmpl.GenerateKubeadmFiles(cfg)
+}
+
+func GenerateNetworkCfg(cfg *cluster.ClusterCfg) {
+	tmpl.GenerateNetworkPluginFiles(cfg)
+}
+
+func Prepare(cfg *cluster.ClusterCfg) {
+	InstallFilesDownload(cfg)
+	GenerateBootStrapScript(cfg)
+	GenerateKubeadmCfg(cfg)
+	GenerateKubeletService()
+	GenerateNetworkCfg(cfg)
+}
