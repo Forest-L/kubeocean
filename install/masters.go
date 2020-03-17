@@ -11,7 +11,7 @@ import (
 
 func InitCluster(cfg *cluster.ClusterCfg, master *cluster.ClusterNodeCfg) {
 	if master.Node.InternalAddress == "" {
-		exec.Command("sh", "-c", "mkdir -r /etc/kubernetes")
+		exec.Command("sh", "-c", "mkdir -p /etc/kubernetes")
 		exec.Command("sh", "-c", "cp -f /tmp/kubeocean/kubeadm-config.yaml /etc/kubernetes").Run()
 		if out, err := exec.Command("sh", "-c", "/usr/local/bin/kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml").CombinedOutput(); err != nil {
 			log.Fatalf("Failed to init cluster:\n %v", string(out))
