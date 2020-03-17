@@ -104,10 +104,12 @@ func GetKubeBinary(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 	kubeletFile := fmt.Sprintf("kubelet-%s", kubeVersion)
 	kubectlFile := fmt.Sprintf("kubectl-%s", kubeVersion)
 	kubeCniFile := fmt.Sprintf("cni-plugins-linux-%s-%s.tgz", cluster.DefaultArch, "v0.8.1")
+	helmFile := fmt.Sprintf("helm-%s", cluster.DefaultHelmVersion)
 	getKubeadmCmd := fmt.Sprintf("cp -f /tmp/kubeocean/%s /usr/local/bin/kubeadm", kubeadmFile)
 	getKubeletCmd := fmt.Sprintf("cp -f /tmp/kubeocean/%s /usr/local/bin/kubelet", kubeletFile)
 	getKubectlCmd := fmt.Sprintf("cp -f /tmp/kubeocean/%s /usr/local/bin/kubectl", kubectlFile)
 	getKubeCniCmd := fmt.Sprintf("tar -zxf /tmp/kubeocean/%s -C /opt/cni/bin", kubeCniFile)
+	getHelmCmd := fmt.Sprintf("cp -f /tmp/kubeocean/%s /usr/local/bin/helm", helmFile)
 
 	if nodes.Hosts[0].Node.InternalAddress == "" {
 		log.Info("Get Kube Binary Files")
@@ -131,6 +133,12 @@ func GetKubeBinary(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 		if err := exec.Command("/bin/sh", "-c", getKubeCniCmd).Run(); err != nil {
 			log.Errorf("Failed to get kubecni: %v", err)
 		}
+
+		log.Info("Get Helm Binary Files")
+		if err := exec.Command("/bin/sh", "-c", getHelmCmd).Run(); err != nil {
+			log.Errorf("Failed to get helm: %v", err)
+		}
+		exec.Command("/bin/sh", "-c", "chmod +x /usr/local/bin/helm").Run()
 
 	} else {
 		log.Info("Get Kube Binary Files")
