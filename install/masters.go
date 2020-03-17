@@ -34,7 +34,8 @@ func InitCluster(cfg *cluster.ClusterCfg, master *cluster.ClusterNodeCfg) {
 		ssh.PushFile(master.Node.Address, "/tmp/kubeocean/kubeadm-config.yaml", "/tmp/kubeocean", master.Node.User, master.Node.Port, master.Node.Password, true)
 		master.CmdExec("cp -f /tmp/kubeocean/kubeadm-config.yaml /etc/kubernetes")
 		initClusterCmd := "/usr/local/bin/kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml"
-		if err := master.CmdExec(initClusterCmd); err != nil {
+		if out, err := master.CmdExecOut(initClusterCmd); err != nil {
+			fmt.Println(out)
 			log.Fatalf("Failed to init cluster (%s):\n%v", master.Node.Address, err)
 		}
 
