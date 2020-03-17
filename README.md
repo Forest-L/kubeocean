@@ -21,7 +21,7 @@ cd kubeocean
 # Deploy cluster
 ./kubeocean create cluster --cluster-info ./cluster-info.yaml
 ```
-###Supported
+### Supported
 * Deploy allinone cluster
 * Deploy multinodes cluster
 * Add nodes (masters and nodes)
