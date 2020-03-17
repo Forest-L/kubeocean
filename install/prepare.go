@@ -93,11 +93,7 @@ func GenerateNetworkCfg(cfg *cluster.ClusterCfg) {
 }
 
 func Prepare(cfg *cluster.ClusterCfg) {
-	out, err := exec.Command("mkdir -p /tmp/kubeocean").CombinedOutput()
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(out)
+	exec.Command("sh", "-c", "mkdir -p /tmp/kubeocean").Run()
 	InstallFilesDownload(cfg)
 	GenerateBootStrapScript(cfg)
 	GenerateKubeadmCfg(cfg)
