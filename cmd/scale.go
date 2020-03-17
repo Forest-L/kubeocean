@@ -54,21 +54,22 @@ func scaleCluster(clusterCfgFile string) {
 	go ssh.CheckResults(result, masterNum, wg, ccons)
 
 	for _, node := range newNodes.Hosts {
+		host := node
 		ccons <- struct{}{}
 		wg.Add(1)
-		go func(joinMasterCmd, joinWorkerCmd string, node *cluster.ClusterNodeCfg, rs chan string) {
-			if node.IsMaster {
-				scale.JoinMaster(node, joinMasterCmd)
-				if node.IsWorker {
-					install.RemoveMasterTaint(node)
+		go func(joinMasterCmd, joinWorkerCmd string, host *cluster.ClusterNodeCfg, rs chan string) {
+			if host.IsMaster {
+				scale.JoinMaster(host, joinMasterCmd)
+				if host.IsWorker {
+					install.RemoveMasterTaint(host)
 				}
 			} else {
-				if node.IsWorker {
-					scale.JoinWorker(node, joinWorkerCmd)
+				if host.IsWorker {
+					scale.JoinWorker(host, joinWorkerCmd)
 				}
 			}
 			rs <- "ok"
-		}(joinMasterCmd, joinWorkerCmd, &node, result)
+		}(joinMasterCmd, joinWorkerCmd, &host, result)
 	}
 	wg.Wait()
 }

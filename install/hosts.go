@@ -41,13 +41,14 @@ func OverrideHostname(nodes *cluster.AllNodes) {
 		go ssh.CheckResults(result, hostNum, wg, ccons)
 		fmt.Println(nodes.Hosts)
 		for _, node := range nodes.Hosts {
+			host := node
 			ccons <- struct{}{}
 			wg.Add(1)
-			cmd := fmt.Sprintf("hostnamectl set-hostname %s", node.Node.HostName)
-			go func(rs chan string, cmd string) {
+			go func(rs chan string, host *cluster.ClusterNodeCfg) {
+				cmd := fmt.Sprintf("hostnamectl set-hostname %s", host.Node.HostName)
 				node.CmdExec(cmd)
-				rs <- node.Node.InternalAddress
-			}(result, cmd)
+				rs <- host.Node.InternalAddress
+			}(result, &host)
 		}
 		wg.Wait()
 	}
@@ -73,18 +74,19 @@ func InstallDocker(nodes *cluster.AllNodes) {
 		go ssh.CheckResults(rs, hostNum, wg, cn)
 
 		for _, node := range nodes.Hosts {
+			host := node
 			cn <- struct{}{}
 			wg.Add(1)
-			go func(rs chan string) {
+			go func(rs chan string, host *cluster.ClusterNodeCfg) {
 				dockerCheckCmd := "which docker"
 				installDockerCmd := "curl https://raw.githubusercontent.com/pixiake/kubeocean/master/scripts/docker-istall.sh | sh"
-				if err := node.CmdExec(dockerCheckCmd); err != nil {
-					ssh.CmdExec(node.Node.Address, node.Node.User, node.Node.Port, node.Node.Password, true, "", installDockerCmd)
+				if err := host.CmdExec(dockerCheckCmd); err != nil {
+					ssh.CmdExec(host.Node.Address, host.Node.User, host.Node.Port, host.Node.Password, true, "", installDockerCmd)
 				} else {
-					log.Infof("Docker already exists. [%s]", node.Node.InternalAddress)
+					log.Infof("Docker already exists. [%s]", host.Node.InternalAddress)
 				}
-				rs <- node.Node.InternalAddress
-			}(rs)
+				rs <- host.Node.InternalAddress
+			}(rs, &host)
 		}
 		wg.Wait()
 	}
