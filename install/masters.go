@@ -11,7 +11,7 @@ import (
 
 func InitCluster(cfg *cluster.ClusterCfg, master *cluster.ClusterNodeCfg) {
 	if master.Node.InternalAddress == "" {
-		exec.Command("sh", "-c", "mkdir -p /etc/kubernetes")
+		exec.Command("sh", "-c", "mkdir -p /etc/kubernetes").Run()
 		exec.Command("sh", "-c", "cp -f /tmp/kubeocean/kubeadm-config.yaml /etc/kubernetes/kubeadm-config.yaml").Run()
 		if out, err := exec.Command("sh", "-c", "/usr/local/bin/kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml").CombinedOutput(); err != nil {
 			log.Fatalf("Failed to init cluster:\n %v", string(out))
@@ -52,10 +52,9 @@ func InitCluster(cfg *cluster.ClusterCfg, master *cluster.ClusterNodeCfg) {
 		if cfg.Network.Plugin == "flannel" {
 			ssh.PushFile(master.Node.Address, "/tmp/kubeocean/flannelyaml", "/tmp/kubeocean", master.Node.User, master.Node.Port, master.Node.Password, true)
 		}
-		master.CmdExec("cp -f /tmp/kubeocean/calico.yaml /etc/kubernetes")
+		master.CmdExec("cp -f /tmp/kubeocean/calico.yaml /etc/kubernetes/calico.yaml")
 		if err := master.CmdExec(deployNetworkPluginCmd); err != nil {
 			log.Fatalf("Failed to deploy calico (%s):\n", master.Node.Address)
-
 		}
 		if master.IsWorker {
 			RemoveMasterTaint(master)
