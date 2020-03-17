@@ -105,7 +105,7 @@ func GetKubeBinary(cfg *cluster.ClusterCfg, nodes *cluster.AllNodes) {
 	kubeadmFile := fmt.Sprintf("kubeadm-%s", kubeVersion)
 	kubeletFile := fmt.Sprintf("kubelet-%s", kubeVersion)
 	kubectlFile := fmt.Sprintf("kubectl-%s", kubeVersion)
-	kubeCniFile := fmt.Sprintf("cni-plugins-linux-%s-%s.tgz", cluster.DefaultArch, "v0.8.1")
+	kubeCniFile := fmt.Sprintf("cni-plugins-linux-%s-%s.tgz", cluster.DefaultArch, cluster.DefaultCniVersion)
 	helmFile := fmt.Sprintf("helm-%s", cluster.DefaultHelmVersion)
 	getKubeadmCmd := fmt.Sprintf("cp -f /tmp/kubeocean/%s /usr/local/bin/kubeadm", kubeadmFile)
 	getKubeletCmd := fmt.Sprintf("cp -f /tmp/kubeocean/%s /usr/local/bin/kubelet", kubeletFile)
