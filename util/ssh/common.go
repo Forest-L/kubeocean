@@ -48,8 +48,7 @@ func PrintResults(crs chan Result, ls int, wt *sync.WaitGroup, ccons chan struct
 func CheckResults(crs chan string, ls int, wt *sync.WaitGroup, ccons chan struct{}) {
 	for i := 0; i < ls; i++ {
 		select {
-		case rs := <-crs:
-			fmt.Println(rs)
+		case <-crs:
 		case <-time.After(time.Second * Timeout):
 			fmt.Printf("getSSHClient error,SSH-Read-TimeOut,Timeout=%ds", Timeout)
 		}
