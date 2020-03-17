@@ -34,20 +34,22 @@ func OverrideHostname(nodes *cluster.AllNodes) {
 		}
 	} else {
 		log.Infof("Override Hostname")
-		result := make(chan string)
-		ccons := make(chan struct{}, ssh.DefaultCon)
+		rs := make(chan string)
+		cn := make(chan struct{}, ssh.DefaultCon)
 		hostNum := len(nodes.Hosts)
 		wg := &sync.WaitGroup{}
-		go ssh.CheckResults(result, hostNum, wg, ccons)
+		defer close(rs)
+		defer close(cn)
+		go ssh.CheckResults(rs, hostNum, wg, cn)
 		for _, node := range nodes.Hosts {
 			host := node
-			ccons <- struct{}{}
+			cn <- struct{}{}
 			wg.Add(1)
 			go func(rs chan string, host *cluster.ClusterNodeCfg) {
 				cmd := fmt.Sprintf("hostnamectl set-hostname %s", host.Node.HostName)
-				node.CmdExec(cmd)
+				host.CmdExec(cmd)
 				rs <- host.Node.InternalAddress
-			}(result, &host)
+			}(rs, &host)
 		}
 		wg.Wait()
 	}

@@ -43,6 +43,9 @@ func InitCluster(cfg *cluster.ClusterCfg, master *cluster.ClusterNodeCfg) {
 
 		GetKubeConfig(master)
 		configFile := fmt.Sprintf("/home/%s/.kube/config", master.Node.User)
+		if master.Node.User == "root" {
+			configFile = "/root/.kube/config"
+		}
 		ssh.PullFile(master.Node.Address, "/tmp/kubeocean", configFile, master.Node.User, master.Node.Port, master.Node.Password, true)
 		tmpl.GenerateNetworkPluginFiles(cfg)
 		deployNetworkPluginCmd := fmt.Sprintf("/usr/local/bin/kubectl apply -f /etc/kubernetes/%s.yaml", cfg.Network.Plugin)
