@@ -4,13 +4,11 @@ import (
 	"flag"
 	"github.com/pixiake/kubeocean/cmd"
 	"github.com/spf13/pflag"
-	cliflag "k8s.io/component-base/cli/flag"
-	"k8s.io/klog"
 )
 
 func main() {
-	klog.InitFlags(nil)
-	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
+	//klog.InitFlags(nil)
+	//pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 
 	pflag.Set("logtostderr", "true")

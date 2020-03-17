@@ -5,7 +5,7 @@ Deploy a Kubernetes Cluster flexibly and easily
 ```shell script
 git clone https://github.com/pixiake/kubeocean.git
 cd kubeocean
-./build
+./build.sh
 ```
 > Note: Docker needs to be installed before building.
 
